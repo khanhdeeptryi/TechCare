@@ -60,7 +60,7 @@ class _SignupState extends State<Signup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Sign up")),
+        appBar: AppBar(title: Text("TechCare")),
         body: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -73,7 +73,23 @@ class _SignupState extends State<Signup> {
                 controller: password,
                 decoration: InputDecoration(hintText: 'Enter password'),
               ),
-              ElevatedButton(onPressed: (()=>signup()), child: Text("Sign up"))
+              Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (()=>signup()), 
+                  child: Text("Sign up")
+                ),
+              ),
+              SizedBox(height: 16,),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: (()=>Get.back()), 
+                  child: Text("Back to Login")
+                ),
+              ),
+              SizedBox(height: 20,),
             ],
           ),
         )

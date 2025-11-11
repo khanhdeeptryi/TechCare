@@ -18,7 +18,7 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Homepage"),),
+      appBar: AppBar(title: Text("TechCare"),),
       body: Center(
         child: Text('${user!.email}'),
       ),

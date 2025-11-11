@@ -20,7 +20,7 @@ class _ForgotState extends State<Forgot> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text("Forgot password")),
+        appBar: AppBar(title: Text("TechCare")),
         body: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -29,7 +29,23 @@ class _ForgotState extends State<Forgot> {
                 controller: email,
                 decoration: InputDecoration(hintText: 'Enter email'),
               ),
-              ElevatedButton(onPressed: (()=>reset()), child: Text("Send link"))
+              Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (()=>reset()), 
+                  child: Text("Send link")
+                ),
+              ),
+              SizedBox(height: 16,),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: (()=>Get.back()), 
+                  child: Text("Back to Login")
+                ),
+              ),
+              SizedBox(height: 20,),
             ],
           ),
         )

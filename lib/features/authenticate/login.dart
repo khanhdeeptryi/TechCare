@@ -14,6 +14,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
+  bool _obscurePassword = true;
 
   signIn() async {
     try {
@@ -90,7 +91,18 @@ class _LoginState extends State<Login> {
             ),
             TextField(
               controller: password,
-              decoration: InputDecoration(hintText: 'Enter password'),
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                hintText: 'Enter password',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
             Align(
               alignment: Alignment.centerRight,

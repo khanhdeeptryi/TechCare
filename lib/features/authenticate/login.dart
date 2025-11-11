@@ -79,7 +79,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Login")),
+      appBar: AppBar(title: Text("TechCare")),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -92,11 +92,34 @@ class _LoginState extends State<Login> {
               controller: password,
               decoration: InputDecoration(hintText: 'Enter password'),
             ),
-            ElevatedButton(onPressed: (()=>signIn()), child: Text("Login")),
-            SizedBox(height: 30,),
-            ElevatedButton(onPressed: (()=>Get.to(Signup())), child: Text("Register now")),
-            SizedBox(height: 30,),
-            ElevatedButton(onPressed: (()=>Get.to(Forgot())), child: Text("Forgot password")),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: (()=>Get.to(Forgot())), 
+                child: Text("Forgot password")
+              ),
+            ),
+            Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: (()=>Get.to(Signup())), 
+                child: Text("Register now")
+              ),
+            ),
+            SizedBox(height: 16,),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (()=>signIn()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text("Login")
+              ),
+            ),
+            SizedBox(height: 20,),
           ],
         ),
       )

@@ -5,8 +5,7 @@ import 'package:tech_care/wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(); // <-- phải chờ khởi tạo Firebase trước
   runApp(const MyApp());
 }
 

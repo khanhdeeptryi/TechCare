@@ -3,26 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:tech_care/features/authenticate/login.dart';
 import 'package:tech_care/homepage.dart';
 
-class Wrapper extends StatefulWidget {
+class Wrapper extends StatelessWidget {
   const Wrapper({super.key});
 
   @override
-  State<Wrapper> createState() => _WrapperState();
-}
-
-class _WrapperState extends State<Wrapper> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Homepage();
-            } else {
-              return Login();
-            }
-          })
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(), // lắng nghe user login/logout
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // đang chờ Firebase load trạng thái user
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          // có user => đã đăng nhập
+          return const Homepage();
+        } else {
+          // chưa đăng nhập => vào trang login
+          return const Login();
+        }
+      },
     );
   }
 }

@@ -12,20 +12,19 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  TextEditingController email = TextEditingController();
-  TextEditingController password = TextEditingController();
+  final TextEditingController email = TextEditingController();
+  final TextEditingController password = TextEditingController();
   bool _obscurePassword = true;
 
-  signIn() async {
+  Future<void> signIn() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email.text,
-          password: password.text
+        email: email.text.trim(),
+        password: password.text.trim(),
       );
 
-      // Hiển thị snackbar thành công
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Login successful!'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
@@ -33,43 +32,33 @@ class _LoginState extends State<Login> {
         ),
       );
     } on FirebaseAuthException catch (e) {
-      // Log chi tiết lỗi để debug
       print('FirebaseAuthException code: ${e.code}');
       print('FirebaseAuthException message: ${e.message}');
 
-      String msg = '';
-
-      if (e.code == 'user-not-found') {
-        msg = 'No user found with this email.';
-      } else if (e.code == 'wrong-password') {
-        msg = 'Wrong password provided.';
-      } else if (e.code == 'invalid-email') {
-        msg = 'Invalid email address.';
-      } else if (e.code == 'user-disabled') {
-        msg = 'This account has been disabled.';
-      } else if (e.code == 'too-many-requests') {
-        msg = 'Too many attempts. Please try again later.';
-      } else if (e.code == 'invalid-credential') {
-        msg = 'Invalid email or password.';
-      } else {
-        msg = 'An error occurred: ${e.message}';
-      }
+      String msg = switch (e.code) {
+        'user-not-found' => 'No user found with this email.',
+        'wrong-password' => 'Wrong password provided.',
+        'invalid-email' => 'Invalid email address.',
+        'user-disabled' => 'This account has been disabled.',
+        'too-many-requests' => 'Too many attempts. Please try again later.',
+        'invalid-credential' => 'Invalid email or password.',
+        _ => 'An error occurred: ${e.message}',
+      };
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     } catch (e) {
       print('General exception: $e');
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Unexpected error occurred'),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 3),
         ),
@@ -79,62 +68,175 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryColor = Colors.lightBlue.shade400;
+    final Color secondaryColor = Colors.lightBlue.shade100;
+
     return Scaffold(
-      appBar: AppBar(title: Text("TechCare")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: email,
-              decoration: InputDecoration(hintText: 'Enter email'),
-            ),
-            TextField(
-              controller: password,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                hintText: 'Enter password',
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: (()=>Get.to(Forgot())), 
-                child: Text("Forgot password")
-              ),
-            ),
-            Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: (()=>Get.to(Signup())), 
-                child: Text("Register now")
-              ),
-            ),
-            SizedBox(height: 16,),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (()=>signIn()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text("Login")
-              ),
-            ),
-            SizedBox(height: 20,),
-          ],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.lightBlue.shade50,
+              Colors.lightBlue.shade100,
+              Colors.lightBlue.shade200,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-      )
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.lightBlue.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.local_hospital_rounded,
+                      size: 80, color: primaryColor),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Welcome Back!",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Email
+                  TextField(
+                    controller: email,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      labelStyle: TextStyle(color: primaryColor),
+                      prefixIcon:
+                          Icon(Icons.email_outlined, color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            BorderSide(color: primaryColor, width: 1.8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password
+                  TextField(
+                    controller: password,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      labelStyle: TextStyle(color: primaryColor),
+                      prefixIcon:
+                          Icon(Icons.lock_outline, color: primaryColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: primaryColor,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            BorderSide(color: primaryColor, width: 1.8),
+                      ),
+                    ),
+                  ),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Get.to(() => const Forgot()),
+                      child: Text(
+                        "Forgot password?",
+                        style: TextStyle(color: primaryColor),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Login button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: signIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 3,
+                      ),
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Register button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Get.to(() => const Signup()),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: primaryColor, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        "Register Now",
+                        style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

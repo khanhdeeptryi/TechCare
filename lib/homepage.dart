@@ -1,8 +1,15 @@
+// Homepage.dart (ĐÃ CẬP NHẬT)
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tech_care/features/authenticate/login.dart';
 import 'package:tech_care/features/account/account.dart';
+import 'package:tech_care/features/booking/Doctor_Booking/doctor_booking_page.dart';
+import 'package:tech_care/features/booking/Clinic_Booking/clinic_booking_page.dart';
+import 'package:tech_care/features/booking/Hospital_Booking/hospital_booking_page.dart';
+// ... Thêm các import khác cho ChatPage, HealthProfilePage, v.v. ...
+
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -39,7 +46,7 @@ class _HomepageState extends State<Homepage> {
   Widget _buildHomePage() {
     return Column(
       children: [
-        // Header
+        // Header (Không đổi)
         Container(
           color: Colors.blue,
           padding: EdgeInsets.all(16),
@@ -104,15 +111,15 @@ class _HomepageState extends State<Homepage> {
             ],
           ),
         ),
-        
+
         // Body content
         Expanded(
           child: SingleChildScrollView(
             child: Column(
               children: [
                 SizedBox(height: 16),
-                
-                // Banner slider
+
+                // Banner slider (Không đổi)
                 Container(
                   height: 160,
                   margin: EdgeInsets.symmetric(horizontal: 16),
@@ -174,10 +181,10 @@ class _HomepageState extends State<Homepage> {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 20),
-                
-                // Grid các chức năng
+
+                // --- BƯỚC 3: CẬP NHẬT GRID CÁC CHỨC NĂNG ---
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -185,36 +192,88 @@ class _HomepageState extends State<Homepage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildFeatureItem(Icons.medical_services, 'Đặt khám\nbác sĩ', Colors.orange),
-                          _buildFeatureItem(Icons.local_hospital, 'Đặt khám\nphòng khám', Colors.blue),
-                          _buildFeatureItem(Icons.business, 'Đặt khám\nbệnh viện', Colors.pink),
+                          _buildFeatureItem(
+                            Icons.medical_services,
+                            'Đặt khám\nbác sĩ',
+                            Colors.orange,
+                            // Thêm hành động onTap
+                            () => Get.to(() => DoctorBookingPage()),
+                          ),
+                          _buildFeatureItem(
+                            Icons.local_hospital,
+                            'Đặt khám\nphòng khám',
+                            Colors.blue,
+                           () => Get.to(() => ClinicBookingPage()),
+                          ),
+                          _buildFeatureItem(
+                            Icons.business,
+                            'Đặt khám\nbệnh viện',
+                            Colors.pink,
+                            () => Get.to(() => HospitalBookingPage()),
+                          ),
                         ],
                       ),
                       SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildFeatureItem(Icons.chat_bubble, 'Chat với\nbác sĩ', Colors.cyan),
-                          _buildFeatureItem(Icons.video_call, 'Gọi video\nvới bác sĩ', Colors.purple),
-                          _buildFeatureItem(Icons.favorite, 'Hồ sơ\nsức khỏe', Colors.cyan),
+                          _buildFeatureItem(
+                            Icons.chat_bubble,
+                            'Chat với\nbác sĩ',
+                            Colors.cyan,
+                            // () => Get.to(() => ChatPage()),
+                            () {}, // Tạm thời
+                          ),
+                          _buildFeatureItem(
+                            Icons.video_call,
+                            'Gọi video\nvới bác sĩ',
+                            Colors.purple,
+                            // () => Get.to(() => VideoCallPage()),
+                            () {}, // Tạm thời
+                          ),
+                          _buildFeatureItem(
+                            Icons.favorite,
+                            'Hồ sơ\nsức khỏe',
+                            Colors.cyan,
+                            // () => Get.to(() => HealthProfilePage()),
+                            () {}, // Tạm thời
+                          ),
                         ],
                       ),
                       SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildFeatureItem(Icons.vaccines, 'Đặt lịch\nTiêm chủng', Colors.pink),
-                          _buildFeatureItem(Icons.science, 'Đặt lịch\nXét nghiệm', Colors.cyan),
-                          _buildFeatureItem(Icons.group, 'Cộng đồng', Colors.blue),
+                          _buildFeatureItem(
+                            Icons.vaccines,
+                            'Đặt lịch\nTiêm chủng',
+                            Colors.pink,
+                            // () => Get.to(() => VaccinationPage()),
+                            () {}, // Tạm thời
+                          ),
+                          _buildFeatureItem(
+                            Icons.science,
+                            'Đặt lịch\nXét nghiệm',
+                            Colors.cyan,
+                            // () => Get.to(() => LabTestPage()),
+                            () {}, // Tạm thời
+                          ),
+                          _buildFeatureItem(
+                            Icons.group,
+                            'Cộng đồng',
+                            Colors.blue,
+                            // () => Get.to(() => CommunityPage()),
+                            () {}, // Tạm thời
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 20),
-                
-                // Card đăng ký thành viên
+
+                // Card đăng ký thành viên (Không đổi)
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16),
                   padding: EdgeInsets.all(16),
@@ -255,9 +314,9 @@ class _HomepageState extends State<Homepage> {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 12),
-                
+
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: SizedBox(
@@ -286,10 +345,10 @@ class _HomepageState extends State<Homepage> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: 20),
-                
-                // Bác sĩ section
+
+                // Bác sĩ section (Không đổi)
                 Container(
                   padding: EdgeInsets.all(16),
                   color: Colors.white,
@@ -306,7 +365,7 @@ class _HomepageState extends State<Homepage> {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 80),
               ],
             ),
@@ -323,8 +382,8 @@ class _HomepageState extends State<Homepage> {
       body: SafeArea(
         child: _getPage(),
       ),
-      
-      // Bottom Navigation Bar
+
+      // Bottom Navigation Bar (Không đổi)
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -363,25 +422,29 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String label, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
+  // --- BƯỚC 2: SỬA ĐỔI _buildFeatureItem ---
+  Widget _buildFeatureItem(IconData icon, String label, Color color, VoidCallback onTap) {
+    return GestureDetector( // Bọc trong GestureDetector
+      onTap: onTap, // Gán hành động onTap
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 35),
           ),
-          child: Icon(icon, color: color, size: 35),
-        ),
-        SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: Colors.black87),
-        ),
-      ],
+          SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.black87),
+          ),
+        ],
+      ),
     );
   }
 }

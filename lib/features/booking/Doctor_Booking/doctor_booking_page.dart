@@ -7,14 +7,40 @@ import '../../../models/doctor.dart';
 import '../../../widgets/doctor_card.dart';
 import 'booking_screen.dart';
 
-class DoctorBookingPage extends StatelessWidget {
+class DoctorBookingPage extends StatefulWidget {
   const DoctorBookingPage({Key? key}) : super(key: key);
 
+  @override
+  State<DoctorBookingPage> createState() => _DoctorBookingPageState();
+}
+
+class _DoctorBookingPageState extends State<DoctorBookingPage> {
   static const String _collectionName = 'doctors';
+
+  // filter state
+  String? _selectedLocation;   // ví dụ: "Quận 10"
+  String? _selectedSpecialty;  // ví dụ: "nội"
+
+  // bạn chỉnh danh sách này cho khớp với data thật
+  final List<String> _locationOptions = [
+    'Quận 1',
+    'Quận 5',
+    'Quận 10',
+    'Quận Phú Nhuận',
+    'Quận Bình Thạnh',
+  ];
+
+  final List<String> _specialtyOptions = [
+    'nội',
+    'ngoại',
+    'Nội thận',
+    'Ngoại tiết niệu',
+    'Nam khoa',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // Debug: in ra thông tin Firebase hiện tại
+    // Debug: in ra thông tin Firebase hiện tại (1 lần)
     final app = Firebase.app();
     print(' Firebase app name   : ${app.name}');
     print(' Firebase projectId  : ${app.options.projectId}');
@@ -55,41 +81,54 @@ class DoctorBookingPage extends StatelessWidget {
                 }
 
                 final docs = snapshot.data!.docs;
-                print('👉 Số lượng bác sĩ lấy được: ${docs.length}');
+                print('👉 Tổng số bác sĩ lấy được: ${docs.length}');
 
-                if (docs.isEmpty) {
+                // map sang list Doctor
+                List<Doctor> doctors = docs.map((docSnap) {
+                  final data =
+                      docSnap.data() as Map<String, dynamic>;
+                  final docId = docSnap.id;
+                  return Doctor.fromFirestore(data, docId);
+                }).toList();
+
+                // áp dụng filter location
+                if (_selectedLocation != null &&
+                    _selectedLocation!.isNotEmpty) {
+                  doctors = doctors
+                      .where((d) =>
+                          d.address.contains(_selectedLocation!))
+                      .toList();
+                }
+
+                // áp dụng filter specialty
+                if (_selectedSpecialty != null &&
+                    _selectedSpecialty!.isNotEmpty) {
+                  doctors = doctors
+                      .where((d) => d.specialties
+                          .map((e) => e.toLowerCase())
+                          .contains(_selectedSpecialty!.toLowerCase()))
+                      .toList();
+                }
+
+                print(
+                    '👉 Số bác sĩ sau khi lọc: ${doctors.length} (location=$_selectedLocation, specialty=$_selectedSpecialty)');
+
+                if (doctors.isEmpty) {
                   return const Center(
                     child: Text('Không tìm thấy bác sĩ nào.'),
                   );
                 }
 
                 return ListView.builder(
-                  itemCount: docs.length,
+                  itemCount: doctors.length,
                   itemBuilder: (context, index) {
-                    final docSnap = docs[index];
-                    final data =
-                        docSnap.data() as Map<String, dynamic>;
-                    final docId = docSnap.id;
-
-                    try {
-                      final doctor =
-                          Doctor.fromFirestore(data, docId);
-
-                      return DoctorCard(
-                        doctor: doctor,
-                        onBookPressed: () {
-                          Get.to(() => BookingScreen(doctor: doctor));
-                        },
-                      );
-                    } catch (e, st) {
-                      print('❌ Lỗi parse Doctor (docId=$docId): $e');
-                      print(st);
-                      return ListTile(
-                        title:
-                            Text('Lỗi dữ liệu bác sĩ (id: $docId)'),
-                        subtitle: Text(e.toString()),
-                      );
-                    }
+                    final doctor = doctors[index];
+                    return DoctorCard(
+                      doctor: doctor,
+                      onBookPressed: () {
+                        Get.to(() => BookingScreen(doctor: doctor));
+                      },
+                    );
                   },
                 );
               },
@@ -99,6 +138,8 @@ class DoctorBookingPage extends StatelessWidget {
       ),
     );
   }
+
+  // ----------------- UI PHẦN TRÊN -----------------
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
@@ -115,38 +156,165 @@ class DoctorBookingPage extends StatelessWidget {
           border: InputBorder.none,
           prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
         ),
+        // TODO: bạn có thể thêm search theo tên ở đây
       ),
     );
   }
 
   Widget _buildFilterChips() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16.0, vertical: 12.0),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Chip Tất cả – xoá hết filter
           ActionChip(
             avatar: const Icon(Icons.menu, size: 18),
             label: const Text('Tất cả'),
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                _selectedLocation = null;
+                _selectedSpecialty = null;
+              });
+            },
             shape: const StadiumBorder(),
           ),
+
+          // Chip Nơi khám – chọn location
           ActionChip(
-            avatar: const Icon(Icons.add_location_outlined, size: 18),
-            label: const Text('Nơi khám: Bác sĩ'),
-            onPressed: () {},
+            avatar: const Icon(Icons.place_outlined, size: 18),
+            label: Text(
+              _selectedLocation == null
+                  ? 'Nơi khám: Tất cả'
+                  : 'Nơi khám: $_selectedLocation',
+            ),
+            onPressed: _openLocationFilter,
             shape: const StadiumBorder(),
           ),
+
+          // Chip Bộ lọc – chọn chuyên khoa
           ActionChip(
             avatar: const Icon(Icons.filter_list, size: 18),
-            label: const Text('Bộ lọc'),
-            onPressed: () {},
+            label: Text(
+              _selectedSpecialty == null
+                  ? 'Bộ lọc'
+                  : 'Chuyên khoa: $_selectedSpecialty',
+            ),
+            onPressed: _openSpecialtyFilter,
             shape: const StadiumBorder(),
           ),
         ],
       ),
+    );
+  }
+
+  // ----------------- BOTTOM SHEET FILTER -----------------
+
+  void _openLocationFilter() {
+    showModalBottomSheet(
+      context: Get.context!,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              const Text(
+                'Chọn nơi khám',
+                style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.clear),
+                title: const Text('Tất cả'),
+                onTap: () {
+                  setState(() {
+                    _selectedLocation = null;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ..._locationOptions.map((loc) {
+                final selected = _selectedLocation == loc;
+                return ListTile(
+                  leading: Icon(
+                    selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                  ),
+                  title: Text(loc),
+                  onTap: () {
+                    setState(() {
+                      _selectedLocation = loc;
+                    });
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openSpecialtyFilter() {
+    showModalBottomSheet(
+      context: Get.context!,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              const Text(
+                'Chọn chuyên khoa',
+                style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.clear),
+                title: const Text('Tất cả'),
+                onTap: () {
+                  setState(() {
+                    _selectedSpecialty = null;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ..._specialtyOptions.map((sp) {
+                final selected = _selectedSpecialty == sp;
+                return ListTile(
+                  leading: Icon(
+                    selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                  ),
+                  title: Text(sp),
+                  onTap: () {
+                    setState(() {
+                      _selectedSpecialty = sp;
+                    });
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
   }
 }

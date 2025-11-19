@@ -1,11 +1,12 @@
 class Doctor {
   final String id;
   final String name;
-  final String title;           // "TS.BS"
-  final int experience;         // số năm kinh nghiệm
+  final String title;           
+  final int experience;        
   final String address;
   final String imageUrl;
   final List<String> specialties;
+  final String bio;            
 
   Doctor({
     required this.id,
@@ -15,6 +16,7 @@ class Doctor {
     required this.address,
     required this.imageUrl,
     required this.specialties,
+    required this.bio,
   });
 
   factory Doctor.fromFirestore(Map<String, dynamic> data, String docId) {
@@ -30,6 +32,7 @@ class Doctor {
           ? List<String>.from(
               (data['specialties'] as List).map((e) => e.toString()))
           : <String>[],
+      bio: data['bio']?.toString() ?? '',   
     );
   }
 }

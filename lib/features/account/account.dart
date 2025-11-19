@@ -163,7 +163,6 @@ class Account extends StatelessWidget {
                       showDivider: false,
                       onTap: () async {
                         await FirebaseAuth.instance.signOut();
-                        Get.offAll(() => Login());
                       },
                     ),
                   ],

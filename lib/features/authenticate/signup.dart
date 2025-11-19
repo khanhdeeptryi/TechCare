@@ -47,9 +47,9 @@ class _SignupState extends State<Signup> {
       Get.offAll(Wrapper());
     } on FirebaseAuthException catch (e) {
       String msg = '';
-      if (e.code == 'weak-password')
+      if (e.code == 'weak-password') {
         msg = 'Password should be at least 6 characters.';
-      else if (e.code == 'email-already-in-use')
+      } else if (e.code == 'email-already-in-use')
         msg = 'An account already exists for that email.';
       else if (e.code == 'invalid-email')
         msg = 'Invalid email address.';

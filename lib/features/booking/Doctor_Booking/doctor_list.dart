@@ -60,6 +60,7 @@ class DoctorListScreen extends StatelessWidget {
                         // Xử lý khi nhấn nút Đặt lịch
                         Get.to(() => BookingScreen(doctor: doctor));
                       },
+                    );
                   },
                 );
               },

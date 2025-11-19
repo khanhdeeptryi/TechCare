@@ -1,5 +1,3 @@
-// Homepage.dart (ĐÃ CẬP NHẬT)
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,8 +6,6 @@ import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/booking/Doctor_Booking/doctor_booking_page.dart';
 import 'package:tech_care/features/booking/Clinic_Booking/clinic_booking_page.dart';
 import 'package:tech_care/features/booking/Hospital_Booking/hospital_booking_page.dart';
-// ... Thêm các import khác cho ChatPage, HealthProfilePage, v.v. ...
-
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});

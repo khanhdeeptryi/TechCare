@@ -9,19 +9,24 @@ class Wrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(), // lắng nghe user login/logout
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        debugPrint(
+          'Wrapper authStateChanges: '
+          'state=${snapshot.connectionState}, '
+          'hasData=${snapshot.hasData}, '
+          'user=${snapshot.data}',
+        );
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // đang chờ Firebase load trạng thái user
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          // có user => đã đăng nhập
           return const Homepage();
         } else {
-          // chưa đăng nhập => vào trang login
           return const Login();
         }
       },
     );
   }
 }
+

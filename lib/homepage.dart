@@ -13,7 +13,16 @@ class Homepage extends StatefulWidget {
   @override
   State<Homepage> createState() => _HomepageState();
 }
+class DoctorHomePage extends StatelessWidget {
+  const DoctorHomePage({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: Text('Doctor Home')),
+    );
+  }
+}
 class _HomepageState extends State<Homepage> {
   final user = FirebaseAuth.instance.currentUser;
   int _selectedIndex = 0;

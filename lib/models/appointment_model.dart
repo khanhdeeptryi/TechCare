@@ -17,7 +17,8 @@ class Appointment {
   /// Bản sao hồ sơ bệnh nhân tại thời điểm đặt lịch
   final Map<String, dynamic> patientProfile;
 
-  /// Bản sao thông tin bác sĩ (tên, chuyên khoa, v.v.)
+  /// Bản sao thông tin bác sĩ / phòng khám tại thời điểm đặt lịch
+  /// (đối với clinic/hospital cũng tái sử dụng field này)
   final Map<String, dynamic> doctorInfo;
 
   /// Thời điểm diễn ra cuộc hẹn
@@ -29,10 +30,10 @@ class Appointment {
   /// ID bác sĩ (nếu bookingType == "doctor")
   final String? doctorId;
 
-  /// ID phòng khám
+  /// ID phòng khám (nếu bookingType == "clinic")
   final String? clinicId;
 
-  /// ID bệnh viện
+  /// ID bệnh viện (nếu bookingType == "hospital")
   final String? hospitalId;
 
   /// Ngày khám (dùng để lọc slot theo ngày, dạng "yyyy-MM-dd")
@@ -63,7 +64,9 @@ class Appointment {
 
   /// Tạo từ Firestore (data Map + documentId)
   factory Appointment.fromFirestore(
-      Map<String, dynamic> data, String documentId) {
+    Map<String, dynamic> data,
+    String documentId,
+  ) {
     return Appointment(
       id: documentId,
       userId: data['userId'] ?? '',
@@ -110,7 +113,7 @@ class Appointment {
     };
   }
 
-  /// Factory tiện cho case đặt lịch bác sĩ
+  /// Factory tiện cho case đặt lịch BÁC SĨ
   factory Appointment.forDoctorBooking({
     required String id,
     required String userId,
@@ -136,6 +139,37 @@ class Appointment {
       hospitalId: null,
       appointmentTime: now, // nếu muốn chuẩn hơn, convert từ date + timeSlot
       createdAt: now,
+      examinationResult: null,
+    );
+  }
+
+  /// Factory tiện cho case đặt lịch PHÒNG KHÁM (clinic)
+  factory Appointment.forClinicBooking({
+    required String id,
+    required String userId,
+    required Map<String, dynamic> patientProfile,
+    required Map<String, dynamic> clinicInfo,
+    required String clinicId,
+    required String date,
+    required String timeSlot,
+  }) {
+    final now = Timestamp.now();
+
+    return Appointment(
+      id: id,
+      userId: userId,
+      bookingType: 'clinic', // phân loại là clinic
+      status: 'pending',
+      patientProfile: patientProfile,
+      // Dùng chung field doctorInfo để chứa thông tin clinic
+      doctorInfo: clinicInfo,
+      appointmentTime: now,
+      createdAt: now,
+      date: date,
+      timeSlot: timeSlot,
+      doctorId: null,
+      clinicId: clinicId,
+      hospitalId: null,
       examinationResult: null,
     );
   }

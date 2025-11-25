@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// Import model và widget của Clinic
 import '../../../models/clinic.dart';
 import '../../../widgets/clinic_card.dart';
 import 'clinic_booking_screen.dart'; // File ở bước 4

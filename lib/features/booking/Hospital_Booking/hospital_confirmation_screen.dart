@@ -1,36 +1,38 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-import '../../../models/clinic.dart';
+import '../../../models/hospital.dart';
 import '../../../models/patient_profile.dart';
 import 'success_screen.dart';
 
-class ClinicConfirmationScreen extends StatefulWidget {
-  final Clinic clinic;
+class HospitalConfirmationScreen extends StatefulWidget {
+  final Hospital hospital;
   final PatientProfile patientProfile;
   final DateTime selectedDate;
-  final String selectedTimeSlot; // Ví dụ: "17:30-17:40"
+  final String selectedTimeSlot; // "HH:mm-HH:mm"
+  final String serviceType;      // "normal" | "vip"
 
-  const ClinicConfirmationScreen({
+  const HospitalConfirmationScreen({
     Key? key,
-    required this.clinic,
+    required this.hospital,
     required this.patientProfile,
     required this.selectedDate,
     required this.selectedTimeSlot,
+    required this.serviceType,
   }) : super(key: key);
 
   @override
-  State<ClinicConfirmationScreen> createState() =>
-      _ClinicConfirmationScreenState();
+  State<HospitalConfirmationScreen> createState() =>
+      _HospitalConfirmationScreenState();
 }
 
-class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
+class _HospitalConfirmationScreenState
+    extends State<HospitalConfirmationScreen> {
   bool _isLoading = false;
 
-  // === LOGIC GHI VÀO FIREBASE ===
   Future<void> _confirmBooking() async {
     setState(() {
       _isLoading = true;
@@ -40,8 +42,9 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("Bạn chưa đăng nhập");
 
-      // 1. Xử lý thời gian: Kết hợp Ngày + Giờ bắt đầu (ví dụ "17:30")
-      final startTimeString = widget.selectedTimeSlot.split('-')[0].trim();
+      // Tách giờ bắt đầu
+      final startTimeString =
+          widget.selectedTimeSlot.split('-')[0].trim();
       final timeParts = startTimeString.split(':');
       final hour = int.parse(timeParts[0]);
       final minute = int.parse(timeParts[1]);
@@ -54,38 +57,38 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
         minute,
       );
 
-      // 2. Tạo mã đặt lịch ngẫu nhiên (Ví dụ: YMA + timestamp)
       final String bookingCode =
           'YMA${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
-      // 3. Chuẩn bị dữ liệu để lưu (bookingType = clinic)
+      final String dateStr =
+          DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
       final Map<String, dynamic> appointmentData = {
         'userId': user.uid,
-        'bookingType': 'clinic',
+        'bookingType': 'hospital',
         'status': 'confirmed',
         'bookingCode': bookingCode,
         'createdAt': FieldValue.serverTimestamp(),
         'appointmentTime': Timestamp.fromDate(appointmentDateTime),
+        'date': dateStr,
         'timeSlot': widget.selectedTimeSlot,
 
-        // Lưu bản sao thông tin phòng khám
-        'clinicId': widget.clinic.id,
-        'clinicInfo': {
-          'name': widget.clinic.name,
-          'address': widget.clinic.address,
-          'imageUrl': widget.clinic.imageUrl,
+        'hospitalId': widget.hospital.id,
+        'hospitalInfo': {
+          'name': widget.hospital.name,
+          'address': widget.hospital.address,
+          'imageUrl': widget.hospital.imageUrl,
         },
 
-        // Lưu bản sao hồ sơ bệnh nhân
+        'serviceType': widget.serviceType, // normal | vip
+
         'patientProfile': widget.patientProfile.toMap(),
       };
 
-      // 4. Ghi vào collection 'appointments'
       await FirebaseFirestore.instance
           .collection('appointments')
           .add(appointmentData);
 
-      // 5. Thành công -> Chuyển sang màn hình Success
       Get.offAll(() => const SuccessScreen());
     } catch (e) {
       Get.snackbar(
@@ -105,9 +108,10 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Định dạng ngày hiển thị (ví dụ: T2 17/11/2025)
-    final dateStr =
-        DateFormat('EEEE, dd/MM/yyyy', 'vi_VN').format(widget.selectedDate);
+    final dateStr = DateFormat('EEEE, dd/MM/yyyy', 'vi_VN')
+        .format(widget.selectedDate);
+    final serviceLabel =
+        widget.serviceType == 'vip' ? 'Khám VIP' : 'Khám thường';
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -123,7 +127,7 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
             _buildStepper(),
             _buildWarningBox(),
 
-            // Thông tin đăng ký (Phòng khám + Thời gian)
+            // Thông tin đăng ký
             Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -134,7 +138,7 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildSectionHeader("THÔNG TIN ĐĂNG KÝ"),
-                  _buildClinicInfo(),
+                  _buildHospitalInfo(),
                   const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -158,19 +162,21 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16.0),
                     child: _buildInfoItem(
-                      "Địa chỉ",
-                      widget.clinic.address,
+                      "Hình thức khám",
+                      serviceLabel,
+                      isBold: true,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16.0),
                     child: _buildInfoItem(
-                      "Phòng khám",
-                      widget.clinic.name,
-                      isBold: true,
+                      "Địa chỉ",
+                      widget.hospital.address,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -180,7 +186,8 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
 
             // Thông tin bệnh nhân
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -230,7 +237,7 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
               ),
             ),
 
-            // Chi tiết thanh toán
+            // Thanh toán
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
@@ -242,13 +249,16 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                     children: const [
                       Text(
                         "CHI TIẾT THANH TOÁN",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(
+                            color: Colors.grey, fontSize: 12),
                       ),
-                      Icon(Icons.help_outline, size: 16, color: Colors.grey),
+                      Icon(Icons.help_outline,
+                          size: 16, color: Colors.grey),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -257,11 +267,13 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
                   _buildPaymentRow("Phí tiện ích", "Miễn phí"),
                   const Divider(height: 24),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                     children: const [
                       Text(
                         "Tổng thanh toán",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold),
                       ),
                       Text(
                         "0đ",
@@ -309,16 +321,14 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
               : const Text(
                   "Xác nhận đặt lịch",
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
         ),
       ),
     );
   }
 
-  // --- CÁC WIDGET CON ---
+  // === Widget con ===
 
   Widget _buildStepper() {
     return Container(
@@ -327,11 +337,14 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildStepItem("1", "Chọn lịch", isActive: false, isCompleted: true),
+          _buildStepItem("1", "Chọn lịch",
+              isActive: false, isCompleted: true),
           _buildConnector(isActive: true),
-          _buildStepItem("2", "Xác nhận", isActive: true, isCompleted: false),
+          _buildStepItem("2", "Xác nhận",
+              isActive: true, isCompleted: false),
           _buildConnector(isActive: false),
-          _buildStepItem("3", "Hoàn tất", isActive: false, isCompleted: false),
+          _buildStepItem("3", "Hoàn tất",
+              isActive: false, isCompleted: false),
         ],
       ),
     );
@@ -415,18 +428,19 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
     );
   }
 
-  Widget _buildClinicInfo() {
+  Widget _buildHospitalInfo() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundImage: widget.clinic.imageUrl.isNotEmpty
-                ? NetworkImage(widget.clinic.imageUrl)
+            backgroundImage: widget.hospital.imageUrl.isNotEmpty
+                ? NetworkImage(widget.hospital.imageUrl)
                 : null,
             backgroundColor: Colors.grey[200],
-            child: widget.clinic.imageUrl.isEmpty
+            child: widget.hospital.imageUrl.isEmpty
                 ? const Icon(Icons.local_hospital, color: Colors.grey)
                 : null,
           ),
@@ -436,12 +450,13 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.clinic.name,
+                  widget.hospital.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  widget.clinic.address,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  widget.hospital.address,
+                  style: const TextStyle(
+                      color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -451,16 +466,23 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
     );
   }
 
-  Widget _buildInfoItem(String label, String value, {bool isBold = false}) {
+  Widget _buildInfoItem(
+    String label,
+    String value, {
+    bool isBold = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        Text(label,
+            style:
+                const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            fontWeight:
+                isBold ? FontWeight.bold : FontWeight.normal,
             fontSize: 15,
           ),
         ),
@@ -476,7 +498,8 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
           width: 100,
           child: Text(
             label,
-            style: const TextStyle(color: Colors.grey, fontSize: 13),
+            style: const TextStyle(
+                color: Colors.grey, fontSize: 13),
           ),
         ),
         Expanded(

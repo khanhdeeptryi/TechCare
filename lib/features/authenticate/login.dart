@@ -5,6 +5,7 @@ import 'package:tech_care/features/authenticate/forgot.dart';
 import 'package:tech_care/features/authenticate/signup.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tech_care/homepage.dart';
+import 'package:tech_care/doctorhompage.dart';
 class Login extends StatefulWidget {
   const Login({super.key});
 

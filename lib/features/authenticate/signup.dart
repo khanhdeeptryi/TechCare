@@ -22,6 +22,7 @@ class _SignupState extends State<Signup> {
   String selectedRole = 'user';
 
   signup() async {
+    // 1. Kiểm tra mật khẩu khớp nhau
     if (password.text.trim() != confirmPassword.text.trim()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -34,31 +35,55 @@ class _SignupState extends State<Signup> {
     }
 
     try {
+      // 2. Tạo tài khoản Authentication
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email.text.trim(),
         password: password.text.trim(),
       );
 
-      // Lưu role vào Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(cred.user!.uid)
-          .set({
+      final String uid = cred.user!.uid;
+      final Timestamp now = Timestamp.now();
+
+      // 3. Luôn lưu vào collection 'users' (Để định danh và điều hướng)
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'uid': uid,
         'email': email.text.trim(),
         'role': selectedRole, // 'user' hoặc 'doctor'
-        'createdAt': DateTime.now(),
+        'createdAt': now,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      // 4. LOGIC MỚI: Nếu là Bác sĩ, lưu thêm vào collection 'doctors'
+      if (selectedRole == 'doctor') {
+        await FirebaseFirestore.instance.collection('doctors').doc(uid).set({
+          'uid': uid,
+          'email': email.text.trim(),
+          'role': 'doctor',
+          // Các trường thông tin mặc định cho bác sĩ (để sau này cập nhật)
+          'fullName': '',       // Tên hiển thị
+          'specialty': '',      // Chuyên khoa
+          'hospitalName': '',   // Nơi làm việc
+          'experienceYears': 0, // Kinh nghiệm
+          'avatarUrl': null,    
+          'rating': 5.0,        // Điểm đánh giá khởi tạo
+          'patientCount': 0,
+          'createdAt': now,
+        });
+      }
+
+      // 5. Thông báo thành công
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
 
       await Future.delayed(const Duration(milliseconds: 500));
-      Get.offAll(Wrapper());
+      Get.offAll(Wrapper()); // Chuyển hướng về Wrapper để tự động điều hướng
+      
     } on FirebaseAuthException catch (e) {
       String msg;
       if (e.code == 'weak-password') {
@@ -71,21 +96,25 @@ class _SignupState extends State<Signup> {
         msg = 'An error occurred: ${e.message}';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unexpected error occurred'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unexpected error occurred'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

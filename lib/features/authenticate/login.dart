@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tech_care/features/authenticate/forgot.dart';
-import 'package:tech_care/features/authenticate/signup.dart';
+import 'package:tech_care/features/authenticate/signup_enhanced.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tech_care/homepage.dart';
+
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -18,85 +19,86 @@ class _LoginState extends State<Login> {
   bool _obscurePassword = true;
 
   Future<void> signIn() async {
-  try {
-    final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email.text.trim(),
-      password: password.text.trim(),
-    );
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
+      );
 
-    final user = credential.user;
-    if (user == null) {
+      final user = credential.user;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed: no user returned'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      // Đọc role từ Firestore: collection 'users', document = uid
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final data = doc.data();
+      final String role = (data?['role'] ?? 'user')
+          .toString(); // mặc định là user
+
+      // Điều hướng theo role
+      if (role == 'doctor') {
+        // TODO: thay DoctorHomePage() bằng màn hình doctor thực tế của bạn
+        Get.offAll(() => const DoctorHomePage());
+      } else {
+        // TODO: thay HomePage() bằng màn hình user thực tế của bạn
+        Get.offAll(() => const Homepage());
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Login failed: no user returned'),
+          content: Text('Login successful!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException code: ${e.code}');
+      print('FirebaseAuthException message: ${e.message}');
+
+      String msg = switch (e.code) {
+        'user-not-found' => 'No user found with this email.',
+        'wrong-password' => 'Wrong password provided.',
+        'invalid-email' => 'Invalid email address.',
+        'user-disabled' => 'This account has been disabled.',
+        'too-many-requests' => 'Too many attempts. Please try again later.',
+        'invalid-credential' => 'Invalid email or password.',
+        _ => 'An error occurred: ${e.message}',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      print('General exception: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unexpected error occurred'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 3),
         ),
       );
-      return;
     }
-
-    // Đọc role từ Firestore: collection 'users', document = uid
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    final data = doc.data();
-    final String role = (data?['role'] ?? 'user').toString(); // mặc định là user
-
-    // Điều hướng theo role
-    if (role == 'doctor') {
-      // TODO: thay DoctorHomePage() bằng màn hình doctor thực tế của bạn
-      Get.offAll(() => const DoctorHomePage());
-    } else {
-      // TODO: thay HomePage() bằng màn hình user thực tế của bạn
-      Get.offAll(() => const Homepage());
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login successful!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  } on FirebaseAuthException catch (e) {
-    print('FirebaseAuthException code: ${e.code}');
-    print('FirebaseAuthException message: ${e.message}');
-
-    String msg = switch (e.code) {
-      'user-not-found' => 'No user found with this email.',
-      'wrong-password' => 'Wrong password provided.',
-      'invalid-email' => 'Invalid email address.',
-      'user-disabled' => 'This account has been disabled.',
-      'too-many-requests' => 'Too many attempts. Please try again later.',
-      'invalid-credential' => 'Invalid email or password.',
-      _ => 'An error occurred: ${e.message}',
-    };
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  } catch (e) {
-    print('General exception: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Unexpected error occurred'),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-      ),
-    );
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -137,8 +139,11 @@ class _LoginState extends State<Login> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.local_hospital_rounded,
-                      size: 80, color: primaryColor),
+                  Icon(
+                    Icons.local_hospital_rounded,
+                    size: 80,
+                    color: primaryColor,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     "Welcome Back!",
@@ -158,15 +163,16 @@ class _LoginState extends State<Login> {
                     decoration: InputDecoration(
                       labelText: 'Email',
                       labelStyle: TextStyle(color: primaryColor),
-                      prefixIcon:
-                          Icon(Icons.email_outlined, color: primaryColor),
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        color: primaryColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide:
-                            BorderSide(color: primaryColor, width: 1.8),
+                        borderSide: BorderSide(color: primaryColor, width: 1.8),
                       ),
                     ),
                   ),
@@ -179,8 +185,7 @@ class _LoginState extends State<Login> {
                     decoration: InputDecoration(
                       labelText: 'Password',
                       labelStyle: TextStyle(color: primaryColor),
-                      prefixIcon:
-                          Icon(Icons.lock_outline, color: primaryColor),
+                      prefixIcon: Icon(Icons.lock_outline, color: primaryColor),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -199,8 +204,7 @@ class _LoginState extends State<Login> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide:
-                            BorderSide(color: primaryColor, width: 1.8),
+                        borderSide: BorderSide(color: primaryColor, width: 1.8),
                       ),
                     ),
                   ),
@@ -235,7 +239,9 @@ class _LoginState extends State<Login> {
                       child: const Text(
                         "Login",
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -246,7 +252,7 @@ class _LoginState extends State<Login> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () => Get.to(() => const Signup()),
+                      onPressed: () => Get.to(() => const SignupEnhanced()),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: primaryColor, width: 1.5),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -257,9 +263,10 @@ class _LoginState extends State<Login> {
                       child: Text(
                         "Register Now",
                         style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500),
+                          color: primaryColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),

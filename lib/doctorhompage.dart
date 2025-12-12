@@ -8,6 +8,8 @@ import 'package:get/get.dart'; // [QUAN TRỌNG] Để dùng Get.to
 import 'package:tech_care/models/appointment_model.dart';
 import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/examination/examination_screen.dart'; // [QUAN TRỌNG] Màn hình khám bệnh
+import 'package:tech_care/features/chat/chat_screen.dart';
+import 'package:tech_care/features/chat/doctor_conversation_list_page.dart';
 
 class DoctorHomePage extends StatefulWidget {
   const DoctorHomePage({super.key});
@@ -34,7 +36,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
       case 1:
         return const Center(child: Text('Quản lý Lịch làm việc', style: TextStyle(fontSize: 20)));
       case 2:
-        return const Center(child: Text('Tin nhắn', style: TextStyle(fontSize: 20)));
+        return DoctorConversationListPage();
       case 3:
         return const Center(child: Text('Danh sách Bệnh nhân', style: TextStyle(fontSize: 20)));
       case 4:
@@ -386,7 +388,11 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    // Get.to(() => ChatScreen(appointment: appointment));
+                    // Mở màn hình Chat với Bệnh nhân
+                    Get.to(() => ChatScreen(
+                      receiverId: appointment.userId, // ID của bệnh nhân
+                      receiverName: patientName,      // Tên bệnh nhân (đã lấy ở trên)
+                    ));
                   },
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.blue.shade200),

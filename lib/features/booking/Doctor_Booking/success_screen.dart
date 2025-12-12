@@ -3,13 +3,20 @@ import 'package:qr_flutter/qr_flutter.dart'; // Thư viện mã QR
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-// Import trang chủ để quay về
-// Đảm bảo đường dẫn import đúng với project của bạn
-import '../../../homepage.dart'; 
+// --- IMPORT CÁC MÀN HÌNH LIÊN QUAN ---
+import 'package:tech_care/homepage.dart'; // Trang chủ
+import 'package:tech_care/features/chat/chat_screen.dart'; // Màn hình Chat
 
 class SuccessScreen extends StatelessWidget {
-  // Bỏ tham số bookingCode
-  const SuccessScreen({Key? key}) : super(key: key);
+  // Thêm tham số để biết chat với ai
+  final String? targetUserId;   // ID của bác sĩ hoặc phòng khám
+  final String? targetUserName; // Tên hiển thị (VD: BS. Nguyễn Văn A)
+
+  const SuccessScreen({
+    Key? key,
+    this.targetUserId,
+    this.targetUserName,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +31,7 @@ class SuccessScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
           onPressed: () {
+            // Xóa stack và về trang chủ
             Get.offAll(() => const Homepage());
           },
         ),
@@ -58,7 +66,7 @@ class SuccessScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Vé đặt lịch (Card chứa QR)
+            // --- VÉ ĐẶT LỊCH (QR CARD) ---
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -88,12 +96,12 @@ class SuccessScreen extends StatelessWidget {
                             const Text("1", style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        // Mã QR (Mã hóa chuỗi mặc định vì không có bookingCode)
+                        // Mã QR
                         SizedBox(
                           height: 100,
                           width: 100,
                           child: QrImageView(
-                            data: "DAT_LICH_THANH_CONG", // Dữ liệu mã hóa tạm thời
+                            data: targetUserId ?? "TECH_CARE_BOOKING", 
                             version: QrVersions.auto,
                             size: 100.0,
                           ),
@@ -117,7 +125,8 @@ class SuccessScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        // Đã bỏ dòng hiển thị Mã lịch khám
+                        _buildTicketRow("Bác sĩ/Nơi khám", targetUserName ?? "Đang cập nhật"),
+                        const SizedBox(height: 12),
                         _buildTicketRow("Trạng thái", "Đã xác nhận"),
                         const SizedBox(height: 12),
                         const Text(
@@ -158,6 +167,30 @@ class SuccessScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
             
+            // --- NÚT CHAT VỚI BÁC SĨ (MỚI) ---
+            if (targetUserId != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Điều hướng sang Chat Screen
+                    Get.to(() => ChatScreen(
+                      receiverId: targetUserId!,
+                      receiverName: targetUserName ?? "Bác sĩ",
+                    ));
+                  },
+                  icon: const Icon(Icons.chat, color: Colors.white),
+                  label: const Text("Chat với bác sĩ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            
+            const SizedBox(height: 12),
+
             // Nút Về trang chủ
             SizedBox(
               width: double.infinity,
@@ -173,21 +206,7 @@ class SuccessScreen extends StatelessWidget {
                 child: const Text("Về trang chủ", style: TextStyle(color: Colors.black)),
               ),
             ),
-             const SizedBox(height: 12),
-             SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Mở màn hình chat
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text("Chat với bác sĩ", style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
+            
             const SizedBox(height: 40),
           ],
         ),
@@ -200,7 +219,15 @@ class SuccessScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.grey)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Expanded(
+          child: Text(
+            value, 
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

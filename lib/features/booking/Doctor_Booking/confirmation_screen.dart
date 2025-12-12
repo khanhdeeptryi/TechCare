@@ -40,8 +40,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("Bạn chưa đăng nhập");
 
-      // 1. Xử lý thời gian: Kết hợp Ngày + Giờ bắt đầu (ví dụ "17:30")
-      // Chuỗi giờ là "17:30-17:40", ta lấy phần đầu "17:30"
+      // 1. Xử lý thời gian
       final startTimeString = widget.selectedTimeSlot.split('-')[0].trim(); 
       final timeParts = startTimeString.split(':');
       final hour = int.parse(timeParts[0]);
@@ -55,10 +54,10 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
         minute,
       );
 
-      // 2. Tạo mã đặt lịch ngẫu nhiên (Ví dụ: YMA + timestamp)
+      // 2. Tạo mã đặt lịch
       final String bookingCode = 'YMA${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
-      // 3. Chuẩn bị dữ liệu để lưu
+      // 3. Chuẩn bị dữ liệu
       final Map<String, dynamic> appointmentData = {
         'userId': user.uid,
         'bookingType': 'doctor',
@@ -66,10 +65,12 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
         'bookingCode': bookingCode,
         'createdAt': FieldValue.serverTimestamp(),
         'appointmentTime': Timestamp.fromDate(appointmentDateTime),
-        'timeSlot': widget.selectedTimeSlot, // Lưu thêm string hiển thị cho tiện
+        'timeSlot': widget.selectedTimeSlot,
+        
+        // Lưu ID bác sĩ để chat
+        'doctorId': widget.doctor.id, 
         
         // Lưu bản sao thông tin bác sĩ
-        'doctorId': widget.doctor.id,
         'doctorInfo': {
           'name': widget.doctor.name,
           'title': widget.doctor.title,
@@ -78,15 +79,18 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           'address': widget.doctor.address,
         },
 
-        // Lưu bản sao hồ sơ bệnh nhân (dùng toMap() từ model)
+        // Lưu bản sao hồ sơ bệnh nhân
         'patientProfile': widget.patientProfile.toMap(),
       };
 
       // 4. Ghi vào collection 'appointments'
       await FirebaseFirestore.instance.collection('appointments').add(appointmentData);
 
-      // 5. Thành công -> Chuyển sang màn hình Success
-      Get.offAll(() => const SuccessScreen());
+      // 5. [ĐÃ BỔ SUNG] Chuyển sang màn hình Success KÈM DỮ LIỆU CHAT
+      Get.offAll(() => SuccessScreen(
+        targetUserId: widget.doctor.id, // Truyền ID Bác sĩ để chat
+        targetUserName: "${widget.doctor.title} ${widget.doctor.name}", // Truyền tên hiển thị
+      ));
 
     } catch (e) {
       Get.snackbar(

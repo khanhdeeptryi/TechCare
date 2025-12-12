@@ -55,21 +55,28 @@ class _SignupState extends State<Signup> {
       // 4. LOGIC MỚI: Nếu là Bác sĩ, lưu thêm vào collection 'doctors'
       if (selectedRole == 'doctor') {
         await FirebaseFirestore.instance.collection('doctors').doc(uid).set({
-          'uid': uid,
+          // ID document (để khớp với id: docId trong model)
+          'id': uid, 
+          'uid': uid, // Lưu thêm uid cho chắc chắn
           'email': email.text.trim(),
           'role': 'doctor',
-          // Các trường thông tin mặc định cho bác sĩ (để sau này cập nhật)
-          'fullName': '',       // Tên hiển thị
-          'specialty': '',      // Chuyên khoa
-          'hospitalName': '',   // Nơi làm việc
-          'experienceYears': 0, // Kinh nghiệm
-          'avatarUrl': null,    
-          'rating': 5.0,        // Điểm đánh giá khởi tạo
-          'patientCount': 0,
           'createdAt': now,
+
+          // --- CÁC TRƯỜNG DỮ LIỆU KHỚP VỚI MODEL BẠN GỬI ---
+          // Khởi tạo giá trị mặc định (trống hoặc 0) vì lúc đăng ký chưa nhập
+          'name': '',           // Khớp với: data['name']
+          'title': '',          // Khớp với: data['title'] (VD: ThS.BS)
+          'experience': 0,      // Khớp với: int.tryParse(experience)
+          'address': '',        // Khớp với: data['address']
+          'imageUrl': '',       // Khớp với: data['imageUrl']
+          'specialties': [],    // Khớp với: List<String>
+          'bio': '',            // Khớp với: data['bio']
+          
+          // Các chỉ số phụ (nếu cần cho giao diện)
+          'rating': 5.0,
+          'patientCount': 0,
         });
       }
-
       // 5. Thông báo thành công
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

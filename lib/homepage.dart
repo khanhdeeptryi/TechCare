@@ -6,6 +6,8 @@ import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/booking/Doctor_Booking/doctor_booking_page.dart';
 import 'package:tech_care/features/booking/Clinic_Booking/clinic_booking_page.dart';
 import 'package:tech_care/features/booking/Hospital_Booking/hospital_booking_page.dart';
+import 'package:tech_care/features/health_profile/health_profile_page.dart';
+import 'package:tech_care/features/appointments/patient_appointment_list_page.dart'; // Sửa đường dẫn nếu cần
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -28,7 +30,7 @@ class _HomepageState extends State<Homepage> {
       case 0:
         return _buildHomePage();
       case 1:
-        return Center(child: Text('Lịch khám', style: TextStyle(fontSize: 24)));
+        return const PatientAppointmentListPage();
       case 2:
         return Center(child: Text('Trợ lý y khoa', style: TextStyle(fontSize: 24)));
       case 3:
@@ -229,11 +231,11 @@ class _HomepageState extends State<Homepage> {
                             () {}, // Tạm thời
                           ),
                           _buildFeatureItem(
-                            Icons.favorite,
-                            'Hồ sơ\nsức khỏe',
+                              Icons.favorite,
+                              'Hồ sơ\nsức khỏe',
                             Colors.cyan,
-                            // () => Get.to(() => HealthProfilePage()),
-                            () {}, // Tạm thời
+                              // 3. Cập nhật dòng này:
+                              () => Get.to(() => const HealthProfilePage()), 
                           ),
                         ],
                       ),

@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart'; // [QUAN TRỌNG] Để dùng Get.to
+
+// --- CÁC MODEL VÀ MÀN HÌNH LIÊN QUAN ---
 import 'package:tech_care/models/appointment_model.dart';
-import 'package:tech_care/features/account/account.dart'; 
-// Nếu bạn đã có trang Chat, hãy import vào đây. Ví dụ:
-// import 'package:tech_care/features/chat/conversation_list_page.dart';
+import 'package:tech_care/features/account/account.dart';
+import 'package:tech_care/features/examination/examination_screen.dart'; // [QUAN TRỌNG] Màn hình khám bệnh
 
 class DoctorHomePage extends StatefulWidget {
   const DoctorHomePage({super.key});
@@ -16,28 +18,27 @@ class DoctorHomePage extends StatefulWidget {
 
 class _DoctorHomePageState extends State<DoctorHomePage> {
   final user = FirebaseAuth.instance.currentUser;
-  int _selectedIndex = 0; 
+  int _selectedIndex = 0;
 
-  // Lấy ngày hiện tại dạng chuỗi "yyyy-MM-dd"
-  String get _currentDateString {
+  // Lấy ngày hiện tại để hiển thị (VD: 05/12/2025)
+  String get _currentDateDisplay {
     final now = DateTime.now();
-    return DateFormat('yyyy-MM-dd').format(now);
+    return DateFormat('dd/MM/yyyy').format(now);
   }
 
-  // --- CẬP NHẬT: Thêm case 2 là Tin nhắn ---
+  // --- ĐIỀU HƯỚNG TAB ---
   Widget _getPage() {
     switch (_selectedIndex) {
       case 0:
-        return _buildDashboard(); // Trang chủ Dashboard
+        return _buildDashboard(); // Dashboard chính
       case 1:
         return const Center(child: Text('Quản lý Lịch làm việc', style: TextStyle(fontSize: 20)));
       case 2:
-        // Thay thế widget này bằng màn hình danh sách cuộc trò chuyện của bạn
-        return const Center(child: Text('Tin nhắn với Bệnh nhân', style: TextStyle(fontSize: 20)));
+        return const Center(child: Text('Tin nhắn', style: TextStyle(fontSize: 20)));
       case 3:
         return const Center(child: Text('Danh sách Bệnh nhân', style: TextStyle(fontSize: 20)));
       case 4:
-        return const Account(); 
+        return const Account();
       default:
         return _buildDashboard();
     }
@@ -47,12 +48,9 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      
       body: SafeArea(
         child: _getPage(),
       ),
-
-      // --- CẬP NHẬT: Thêm item Tin nhắn vào BottomNavigationBar ---
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -60,41 +58,23 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             _selectedIndex = index;
           });
         },
-        type: BottomNavigationBarType.fixed, // Quan trọng: fixed để hiển thị đủ 5 icon
-        selectedItemColor: Colors.blue[800], 
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.blue[800],
         unselectedItemColor: Colors.grey,
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Tổng quan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Lịch',
-          ),
-          // --- MỤC TIN NHẮN MỚI ---
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message_outlined),
-            activeIcon: Icon(Icons.message),
-            label: 'Tin nhắn',
-          ),
-          // -------------------------
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Bệnh nhân',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Tài khoản',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Tổng quan'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Lịch'),
+          BottomNavigationBarItem(icon: Icon(Icons.message_outlined), activeIcon: Icon(Icons.message), label: 'Tin nhắn'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Bệnh nhân'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tài khoản'),
         ],
       ),
     );
   }
 
-  // --- WIDGET: DASHBOARD (Giữ nguyên không đổi) ---
+  // --- DASHBOARD UI ---
   Widget _buildDashboard() {
     return SingleChildScrollView(
       child: Column(
@@ -118,21 +98,19 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                   ),
                 ),
                 Text(
-                  _currentDateString,
+                  _currentDateDisplay,
                   style: TextStyle(color: Colors.grey[600], fontSize: 13),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          _buildAppointmentList(),
+          _buildAppointmentList(), // Danh sách lịch hẹn
           const SizedBox(height: 20),
         ],
       ),
     );
   }
-
-  // --- Các Widget con (Header, Stats, List) giữ nguyên ---
 
   Widget _buildHeader() {
     return Container(
@@ -199,7 +177,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildStatCard('Lịch hẹn', '12', Icons.calendar_today, Colors.orange),
-          _buildStatCard('Tin nhắn', '5', Icons.message, Colors.green), // Đổi Bệnh nhân thành Tin nhắn cho dashboard sinh động
+          _buildStatCard('Tin nhắn', '5', Icons.message, Colors.green),
           _buildStatCard('Đánh giá', '4.8', Icons.star, Colors.amber),
         ],
       ),
@@ -225,8 +203,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
           Icon(icon, color: color),
           const SizedBox(height: 8),
           Text(count,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           Text(title,
               style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
@@ -234,11 +211,23 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
     );
   }
 
+  // --- DANH SÁCH LỊCH HẸN (QUERY THEO KHOẢNG THỜI GIAN) ---
   Widget _buildAppointmentList() {
+    // 1. Lấy mốc thời gian bắt đầu và kết thúc ngày hôm nay
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day, 0, 0, 0);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    final startTimestamp = Timestamp.fromDate(startOfDay);
+    final endTimestamp = Timestamp.fromDate(endOfDay);
+
+    // 2. Query Firestore
     final Query query = FirebaseFirestore.instance
         .collection('appointments')
         .where('doctorId', isEqualTo: user?.uid)
-        .where('date', isEqualTo: _currentDateString);
+        .where('appointmentTime', isGreaterThanOrEqualTo: startTimestamp)
+        .where('appointmentTime', isLessThanOrEqualTo: endTimestamp)
+        .orderBy('appointmentTime', descending: false);
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
@@ -246,9 +235,20 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+
         if (snapshot.hasError) {
-          return Center(child: Text('Lỗi: ${snapshot.error}'));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Lỗi tải dữ liệu: ${snapshot.error}\n(Vui lòng kiểm tra Console để tạo Index nếu cần)',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+          );
         }
+
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Column(
@@ -275,6 +275,8 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             final data = docs[index].data() as Map<String, dynamic>;
             final docId = docs[index].id;
             final appointment = Appointment.fromFirestore(data, docId);
+            
+            // Gọi Widget Item đã được cập nhật logic
             return _buildAppointmentItem(appointment);
           },
         );
@@ -282,20 +284,29 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
     );
   }
 
+  // --- ITEM LỊCH HẸN (Đã cập nhật logic Khám ngay) ---
   Widget _buildAppointmentItem(Appointment appointment) {
+    // 1. Lấy thông tin an toàn
     final patientName = appointment.patientProfile['fullName'] ??
         appointment.patientProfile['name'] ??
         'Bệnh nhân ẩn danh';
+    
+    final avatarUrl = appointment.patientProfile['avatarUrl'];
 
+    // 2. Xác định trạng thái
     String statusText;
-    Color statusColor;
+    Color statusTextColor;
     
     switch (appointment.status) {
-      case 'confirmed': statusText = 'Đã xác nhận'; statusColor = Colors.green; break;
-      case 'completed': statusText = 'Hoàn thành'; statusColor = Colors.blue; break;
-      case 'cancelled': statusText = 'Đã hủy'; statusColor = Colors.red; break;
-      default: statusText = 'Chờ xử lý'; statusColor = Colors.orange;
+      case 'confirmed': statusText = 'Đã xác nhận'; statusTextColor = Colors.green; break;
+      case 'completed': statusText = 'Hoàn thành'; statusTextColor = Colors.blue; break;
+      case 'cancelled': statusText = 'Đã hủy'; statusTextColor = Colors.red; break;
+      default: statusText = 'Chờ xử lý'; statusTextColor = Colors.orange;
     }
+
+    // 3. Logic vô hiệu hóa nút
+    final bool isCompleted = appointment.status == 'completed';
+    final bool isCancelled = appointment.status == 'cancelled';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -314,25 +325,27 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
         children: [
           Row(
             children: [
+              // Avatar
               Container(
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
                   color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(10),
-                  image: appointment.patientProfile['avatarUrl'] != null
+                  image: avatarUrl != null && avatarUrl.isNotEmpty
                       ? DecorationImage(
-                          image: NetworkImage(
-                              appointment.patientProfile['avatarUrl']),
+                          image: NetworkImage(avatarUrl),
                           fit: BoxFit.cover,
                         )
                       : null,
                 ),
-                child: appointment.patientProfile['avatarUrl'] == null
+                child: (avatarUrl == null || avatarUrl.isEmpty)
                     ? const Icon(Icons.person, color: Colors.blue)
                     : null,
               ),
               const SizedBox(width: 12),
+              
+              // Tên và Trạng thái
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,14 +357,15 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                     Text(statusText,
                         style: TextStyle(
                             fontSize: 12,
-                            color: statusColor,
+                            color: statusTextColor,
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
+
+              // Giờ khám (Badge)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                     color: Colors.green[50],
                     borderRadius: BorderRadius.circular(20)),
@@ -364,25 +378,45 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             ],
           ),
           const SizedBox(height: 16),
+          
+          // Hàng nút hành động
           Row(
             children: [
+              // Nút Nhắn tin
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                     // TODO: Chuyển sang màn hình chat với bệnh nhân này
-                     // Get.to(() => ChatDetailScreen(userId: appointment.userId));
+                    // Get.to(() => ChatScreen(appointment: appointment));
                   },
-                  child: const Text('Nhắn tin'), // Đổi nút Hồ sơ thành Nhắn tin cho tiện
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue.shade200),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Nhắn tin'), 
                 ),
               ),
               const SizedBox(width: 12),
+
+              // Nút Khám ngay
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: (isCompleted || isCancelled) 
+                      ? null // Vô hiệu hóa nếu xong hoặc hủy
+                      : () {
+                          // Chuyển sang màn hình Khám bệnh
+                          Get.to(() => ExaminationScreen(appointment: appointment));
+                        },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700]),
-                  child: const Text('Khám ngay',
-                      style: TextStyle(color: Colors.white)),
+                      backgroundColor: isCompleted ? Colors.grey : Colors.blue[700],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                  ),
+                  child: Text(
+                      isCompleted ? 'Đã khám' : (isCancelled ? 'Đã hủy' : 'Khám ngay'),
+                      style: const TextStyle(color: Colors.white)),
                 ),
               ),
             ],

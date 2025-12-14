@@ -6,6 +6,8 @@ import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/booking/Doctor_Booking/doctor_booking_page.dart';
 import 'package:tech_care/features/booking/Clinic_Booking/clinic_booking_page.dart';
 import 'package:tech_care/features/booking/Hospital_Booking/hospital_booking_page.dart';
+import 'package:tech_care/features/chat/chat_screen.dart';
+import 'package:tech_care/features/call/video_call_screen.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -214,19 +216,31 @@ class _HomepageState extends State<Homepage> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildFeatureItem(
-                            Icons.chat_bubble,
-                            'Chat với\nbác sĩ',
-                            Colors.cyan,
-                            // () => Get.to(() => ChatPage()),
-                            () {}, // Tạm thời
-                          ),
+                          Icons.chat_bubble,
+                          'Chat với\nbác sĩ',
+                           Colors.cyan,
+                           () {
+                          if (user == null) {
+                          Get.to(() => Login());
+                          } else {
+                          Get.to(() => ChatScreen(doctorId: 'doctor_demo'));
+                          }
+                         },
+                       ),
+
                           _buildFeatureItem(
-                            Icons.video_call,
-                            'Gọi video\nvới bác sĩ',
-                            Colors.purple,
-                            // () => Get.to(() => VideoCallPage()),
-                            () {}, // Tạm thời
-                          ),
+                          Icons.video_call,
+                          'Gọi video\nvới bác sĩ',
+                          Colors.purple,
+                          () {
+                            if (user == null) {
+                              Get.to(() => Login());
+                            } else {
+                              Get.to(() => VideoCallScreen(doctorId: 'doctor_demo'));
+                            }
+                          },
+                        ),
+
                           _buildFeatureItem(
                             Icons.favorite,
                             'Hồ sơ\nsức khỏe',

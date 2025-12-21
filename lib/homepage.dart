@@ -6,24 +6,16 @@ import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/booking/Doctor_Booking/doctor_booking_page.dart';
 import 'package:tech_care/features/booking/Clinic_Booking/clinic_booking_page.dart';
 import 'package:tech_care/features/booking/Hospital_Booking/hospital_booking_page.dart';
+import 'package:tech_care/features/health_profile/health_profile_page.dart';
+import 'package:tech_care/features/appointments/patient_appointment_list_page.dart'; // Sửa đường dẫn nếu cần
+import 'features/chat/conversation_list_page.dart';
+import 'package:tech_care/features/chat/doctor_history_for_chat_page.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
   State<Homepage> createState() => _HomepageState();
-}
-
-
-class DoctorHomePage extends StatelessWidget {
-  const DoctorHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Doctor Home')),
-    );
-  }
 }
 
 
@@ -40,11 +32,11 @@ class _HomepageState extends State<Homepage> {
       case 0:
         return _buildHomePage();
       case 1:
-        return Center(child: Text('Lịch khám', style: TextStyle(fontSize: 24)));
+        return const PatientAppointmentListPage();
       case 2:
         return Center(child: Text('Trợ lý y khoa', style: TextStyle(fontSize: 24)));
       case 3:
-        return Center(child: Text('Tin nhắn', style: TextStyle(fontSize: 24)));
+        return ConversationListPage();
       case 4:
         return Account();
       default:
@@ -230,8 +222,8 @@ class _HomepageState extends State<Homepage> {
                             Icons.chat_bubble,
                             'Chat với\nbác sĩ',
                             Colors.cyan,
-                            // () => Get.to(() => ChatPage()),
-                            () {}, // Tạm thời
+                            () => Get.to(() => DoctorHistoryForChatPage()),
+                             // Tạm thời
                           ),
                           _buildFeatureItem(
                             Icons.video_call,
@@ -241,11 +233,11 @@ class _HomepageState extends State<Homepage> {
                             () {}, // Tạm thời
                           ),
                           _buildFeatureItem(
-                            Icons.favorite,
-                            'Hồ sơ\nsức khỏe',
+                              Icons.favorite,
+                              'Hồ sơ\nsức khỏe',
                             Colors.cyan,
-                            // () => Get.to(() => HealthProfilePage()),
-                            () {}, // Tạm thời
+                              // 3. Cập nhật dòng này:
+                              () => Get.to(() => const HealthProfilePage()), 
                           ),
                         ],
                       ),

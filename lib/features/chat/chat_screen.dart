@@ -2,8 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart'; // [QUAN TRỌNG] Để chuyển trang
+
 import 'package:tech_care/features/chat/chat_service.dart';
 import '../../models/message_model.dart';
+import 'package:tech_care/features/call/call_page.dart'; // [QUAN TRỌNG] Import màn hình gọi
 
 class ChatScreen extends StatefulWidget {
   final String receiverId; // ID người nhận (Bệnh nhân hoặc Bác sĩ)
@@ -33,7 +36,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _messageController.text,
       );
       _messageController.clear();
-      // Cuộn xuống cuối sau khi gửi
       _scrollToBottom();
     }
   }
@@ -41,22 +43,50 @@ class _ChatScreenState extends State<ChatScreen> {
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent + 60, // +60 để chắc chắn
+        _scrollController.position.maxScrollExtent + 60,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
   }
 
+  // --- [MỚI] Hàm tạo ID phòng gọi (để 2 bên trùng khớp nhau) ---
+  String _getChatRoomId(String userId1, String userId2) {
+    List<String> ids = [userId1, userId2];
+    ids.sort(); 
+    return ids.join('_');
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = _auth.currentUser!.uid;
+    // Lấy tên mình để hiện bên máy người kia khi gọi
+    final currentUserName = _auth.currentUser!.email ?? "Người dùng"; 
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.receiverName),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        
+        // --- [QUAN TRỌNG] PHẦN NÚT GỌI BỊ THIẾU TRƯỚC ĐÓ ---
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam, size: 28),
+            onPressed: () {
+              // 1. Tạo Call ID
+              final callID = _getChatRoomId(currentUserId, widget.receiverId);
+
+              // 2. Chuyển sang màn hình gọi
+              Get.to(() => CallPage(
+                callID: callID,
+                userName: currentUserName, 
+              ));
+            },
+          ),
+          const SizedBox(width: 10), // Khoảng cách lề phải
+        ],
+        // -----------------------------------------------------
       ),
       backgroundColor: Colors.grey[100],
       body: Column(
@@ -78,7 +108,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   return const Center(child: Text("Hãy bắt đầu cuộc trò chuyện"));
                 }
 
-                // Xử lý dữ liệu từ RTDB (Map -> List)
                 Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
                 List<Message> messages = [];
                 
@@ -86,10 +115,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messages.add(Message.fromMap(value));
                 });
 
-                // Sắp xếp lại theo thời gian (vì Map không đảm bảo thứ tự)
                 messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-                // Auto scroll xuống cuối khi mới vào
                 WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
                 return ListView.builder(

@@ -44,6 +44,8 @@ dependencies:
   table_calendar: ^3.0.9 
   intl: ^0.20.2
   qr_flutter: ^4.1.0
+  zego_uikit_prebuilt_call: ^4.22.2
+
 
 dev_dependencies:
   flutter_test:

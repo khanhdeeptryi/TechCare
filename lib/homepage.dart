@@ -10,6 +10,9 @@ import 'package:tech_care/features/health_profile/health_profile_page.dart';
 import 'package:tech_care/features/appointments/patient_appointment_list_page.dart'; // Sửa đường dẫn nếu cần
 import 'features/chat/conversation_list_page.dart';
 import 'package:tech_care/features/chat/doctor_history_for_chat_page.dart';
+import 'package:tech_care/features/call/doctor_list_for_call_page.dart';
+import 'features/services/lab_test_page.dart';
+import 'features/services/vaccination_page.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -223,20 +226,17 @@ class _HomepageState extends State<Homepage> {
                             'Chat với\nbác sĩ',
                             Colors.cyan,
                             () => Get.to(() => DoctorHistoryForChatPage()),
-                             // Tạm thời
                           ),
                           _buildFeatureItem(
                             Icons.video_call,
                             'Gọi video\nvới bác sĩ',
                             Colors.purple,
-                            // () => Get.to(() => VideoCallPage()),
-                            () {}, // Tạm thời
+                            () => Get.to(() => DoctorListForCallPage()),
                           ),
                           _buildFeatureItem(
                               Icons.favorite,
                               'Hồ sơ\nsức khỏe',
                             Colors.cyan,
-                              // 3. Cập nhật dòng này:
                               () => Get.to(() => const HealthProfilePage()), 
                           ),
                         ],
@@ -249,15 +249,13 @@ class _HomepageState extends State<Homepage> {
                             Icons.vaccines,
                             'Đặt lịch\nTiêm chủng',
                             Colors.pink,
-                            // () => Get.to(() => VaccinationPage()),
-                            () {}, // Tạm thời
+                            () => Get.to(() => const VaccinationPage()),
                           ),
                           _buildFeatureItem(
                             Icons.science,
                             'Đặt lịch\nXét nghiệm',
                             Colors.cyan,
-                            // () => Get.to(() => LabTestPage()),
-                            () {}, // Tạm thời
+                            () => Get.to(() => LabTestPage()),
                           ),
                           _buildFeatureItem(
                             Icons.group,

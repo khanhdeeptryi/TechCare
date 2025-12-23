@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tech_care/features/account/update_personal_info_page.dart';
+// Import các trang liên kết
+import 'package:tech_care/features/health_profile/health_profile_page.dart';
 import 'package:tech_care/features/authenticate/login.dart';
-import 'package:tech_care/homepage.dart';
 
 class Account extends StatelessWidget {
   const Account({super.key});
@@ -10,128 +13,186 @@ class Account extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 20),
-              
-              // Header - Avatar, Name, Phone
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.grey[300],
-                      child: Icon(Icons.person, size: 35, color: Colors.grey[600]),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Phạm Quốc Khánh',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+              const SizedBox(height: 20),
+
+              // --- 1. HEADER: Lấy dữ liệu thật từ Firestore ---
+              if (user != null)
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    // Giá trị mặc định nếu chưa tải xong
+                    String displayName = user.displayName ?? user.email ?? 'Người dùng';
+                    String phoneNumber = user.phoneNumber ?? 'Chưa cập nhật SĐT';
+                    String? avatarUrl;
+
+                    // Nếu có dữ liệu từ Firestore, ưu tiên dùng dữ liệu đó
+                    if (snapshot.hasData && snapshot.data!.data() != null) {
+                      final data = snapshot.data!.data() as Map<String, dynamic>;
+                      displayName = data['fullName'] ?? data['name'] ?? displayName;
+                      phoneNumber = data['phoneNumber'] ?? data['phone'] ?? phoneNumber;
+                      avatarUrl = data['avatarUrl'];
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 5,
                           ),
-                          SizedBox(height: 4),
-                          Text(
-                            '+84944284242',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // Avatar
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                                ? NetworkImage(avatarUrl)
+                                : null,
+                            child: (avatarUrl == null || avatarUrl.isEmpty)
+                                ? Icon(Icons.person, size: 35, color: Colors.grey[600])
+                                : null,
+                          ),
+                          const SizedBox(width: 16),
+                          // Tên và SĐT
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  phoneNumber,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
+                    );
+                  },
+                )
+              else
+                // Trường hợp chưa đăng nhập (hiện nút đăng nhập)
+                GestureDetector(
+                  onTap: () => Get.to(() => const Login()),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login, color: Colors.white),
+                        SizedBox(width: 10),
+                        Text(
+                          "Đăng nhập ngay",
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              
-              SizedBox(height: 16),
-              
-              // Card 1 - Group 1
+
+              const SizedBox(height: 16),
+
+              // --- 2. MENU NHÓM 1 ---
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                    ),
+                    BoxShadow(color: Colors.grey.withOpacity(0.2), spreadRadius: 1, blurRadius: 5),
                   ],
                 ),
                 child: Column(
                   children: [
                     _buildMenuItem(
-                      icon: Icons.folder_open,
+                      icon: Icons.folder_open, // Hoặc đổi icon thành Icons.person_outline
                       iconColor: Colors.blue,
-                      title: 'Hồ sơ y tế',
+                      title: 'Hồ sơ y tế (Thông tin cá nhân)', // Đổi tiêu đề cho rõ nghĩa nếu muốn
                       showDivider: true,
-                      onTap: () {},
+                      onTap: () {
+                        if (user == null) {
+                            Get.to(() => const Login());
+                        } else {
+                            Get.to(() => const UpdatePersonalInfoPage()); 
+                        }
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.favorite,
                       iconColor: Colors.red,
                       title: 'Danh sách quan tâm',
                       showDivider: true,
-                      onTap: () {},
+                      onTap: () {
+                         Get.snackbar("Thông báo", "Chức năng đang phát triển");
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.error_outline,
                       iconColor: Colors.purple,
                       title: 'Điều khoản và quy định',
                       showDivider: true,
-                      onTap: () {},
+                      onTap: () {
+                         Get.snackbar("Thông báo", "Chức năng đang phát triển");
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.group,
                       iconColor: Colors.green,
                       title: 'Tham gia cộng đồng',
                       showDivider: false,
-                      onTap: () {},
+                      onTap: () {
+                         Get.snackbar("Thông báo", "Chức năng đang phát triển");
+                      },
                     ),
                   ],
                 ),
               ),
-              
-              SizedBox(height: 16),
-              
-              // Card 2 - Group 2
+
+              const SizedBox(height: 16),
+
+              // --- 3. MENU NHÓM 2 ---
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                    ),
+                    BoxShadow(color: Colors.grey.withOpacity(0.2), spreadRadius: 1, blurRadius: 5),
                   ],
                 ),
                 child: Column(
@@ -141,54 +202,63 @@ class Account extends StatelessWidget {
                       iconColor: Colors.pink,
                       title: 'Chia sẻ ứng dụng',
                       showDivider: true,
-                      onTap: () {},
+                      onTap: () {
+                        // Thay vì dùng thư viện share, chỉ hiện thông báo
+                        Get.snackbar("Chia sẻ", "Cảm ơn bạn đã muốn chia sẻ ứng dụng TechCare!");
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.headset_mic,
                       iconColor: Colors.cyan,
                       title: 'Liên hệ & hỗ trợ',
                       showDivider: true,
-                      onTap: () {},
+                      onTap: () {
+                        // Thay vì gọi điện, hiện popup thông tin
+                        Get.defaultDialog(
+                          title: "Tổng đài hỗ trợ",
+                          middleText: "Vui lòng gọi hotline: 1900 1234",
+                          textConfirm: "Đóng",
+                          confirmTextColor: Colors.white,
+                          onConfirm: () => Get.back(),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.settings,
                       iconColor: Colors.grey[800]!,
                       title: 'Cài đặt',
                       showDivider: true,
-                      onTap: () {},
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.logout,
-                      iconColor: Colors.red,
-                      title: 'Đăng xuất',
-                      showDivider: false,
-                      onTap: () async {
-                        await FirebaseAuth.instance.signOut();
+                      onTap: () {
+                         Get.snackbar("Thông báo", "Chức năng đang phát triển");
                       },
                     ),
+                    
+                    // Nút Đăng xuất (Chỉ hiện khi đã đăng nhập)
+                    if (user != null)
+                      _buildMenuItem(
+                        icon: Icons.logout,
+                        iconColor: Colors.red,
+                        title: 'Đăng xuất',
+                        showDivider: false,
+                        onTap: () async {
+                          // Đăng xuất và xóa hết lịch sử trang để về màn hình Login
+                          await FirebaseAuth.instance.signOut();
+                          Get.offAll(() => const Login()); 
+                        },
+                      ),
                   ],
                 ),
               ),
-              
-              SizedBox(height: 24),
-              
-              // Footer - Version info
-              // Text(
-              //   'Version 3.2.28 (2024300905) - Prod - PUBLISHED',
-              //   style: TextStyle(
-              //     fontSize: 12,
-              //     color: Colors.grey[500],
-              //   ),
-              // ),
-              
-              SizedBox(height: 80),
+
+              const SizedBox(height: 80),
             ],
           ),
         ),
       ),
     );
   }
-  
+
+  // Widget xây dựng từng dòng menu
   Widget _buildMenuItem({
     required IconData icon,
     required Color iconColor,
@@ -201,15 +271,15 @@ class Account extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
                 Icon(icon, color: iconColor, size: 24),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.black87,
                     ),
@@ -222,7 +292,7 @@ class Account extends StatelessWidget {
         ),
         if (showDivider)
           Padding(
-            padding: EdgeInsets.only(left: 56),
+            padding: const EdgeInsets.only(left: 56),
             child: Divider(height: 1, color: Colors.grey[300]),
           ),
       ],

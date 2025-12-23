@@ -61,20 +61,25 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
       // 3. Chuẩn bị dữ liệu để lưu (bookingType = clinic)
       final Map<String, dynamic> appointmentData = {
         'userId': user.uid,
-        'bookingType': 'clinic',
+        'bookingType': 'clinic', // QUAN TRỌNG: Loại lịch là clinic
         'status': 'confirmed',
         'bookingCode': bookingCode,
         'createdAt': FieldValue.serverTimestamp(),
         'appointmentTime': Timestamp.fromDate(appointmentDateTime),
         'timeSlot': widget.selectedTimeSlot,
+        // Thêm trường date dạng String để dễ lọc/hiển thị nếu cần
+        'date': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
 
-        // Lưu bản sao thông tin phòng khám
+        // --- LƯU THÔNG TIN PHÒNG KHÁM VÀO clinicData ---
         'clinicId': widget.clinic.id,
-        'clinicInfo': {
+        'clinicData': { // Sửa key thành clinicData để khớp với Model mới
           'name': widget.clinic.name,
           'address': widget.clinic.address,
           'imageUrl': widget.clinic.imageUrl,
         },
+        // Đảm bảo các trường khác null để không gây nhầm lẫn
+        'doctorData': null,
+        'hospitalData': null,
 
         // Lưu bản sao hồ sơ bệnh nhân
         'patientProfile': widget.patientProfile.toMap(),
@@ -106,8 +111,8 @@ class _ClinicConfirmationScreenState extends State<ClinicConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     // Định dạng ngày hiển thị (ví dụ: T2 17/11/2025)
-    final dateStr =
-        DateFormat('EEEE, dd/MM/yyyy', 'vi_VN').format(widget.selectedDate);
+    // Lưu ý: Cần import 'package:intl/date_symbol_data_local.dart'; và gọi initializeDateFormatting() ở main.dart nếu muốn dùng locale tiếng Việt chuẩn
+    final dateStr = DateFormat('EEEE, dd/MM/yyyy').format(widget.selectedDate); 
 
     return Scaffold(
       backgroundColor: Colors.grey[100],

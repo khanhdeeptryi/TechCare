@@ -18,7 +18,7 @@ class _SignupState extends State<Signup> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // role: 'user' hoặc 'doctor'
+  // Các role: 'user', 'doctor', 'clinic', 'hospital'
   String selectedRole = 'user';
 
   signup() async {
@@ -44,39 +44,75 @@ class _SignupState extends State<Signup> {
       final String uid = cred.user!.uid;
       final Timestamp now = Timestamp.now();
 
-      // 3. Luôn lưu vào collection 'users' (Để định danh và điều hướng)
+      // 3. Luôn lưu vào collection 'users' (Bảng tổng)
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'email': email.text.trim(),
-        'role': selectedRole, // 'user' hoặc 'doctor'
+        'role': selectedRole, // Lưu vai trò đã chọn
         'createdAt': now,
       });
 
-      // 4. LOGIC MỚI: Nếu là Bác sĩ, lưu thêm vào collection 'doctors'
+      // 4. LOGIC PHÂN LOẠI DATA THEO ROLE
+      
+      // --- TRƯỜNG HỢP: BÁC SĨ ---
       if (selectedRole == 'doctor') {
         await FirebaseFirestore.instance.collection('doctors').doc(uid).set({
-          // ID document (để khớp với id: docId trong model)
-          'id': uid, 
-          'uid': uid, // Lưu thêm uid cho chắc chắn
+          'id': uid,
+          'uid': uid,
           'email': email.text.trim(),
           'role': 'doctor',
           'createdAt': now,
-
-          // --- CÁC TRƯỜNG DỮ LIỆU KHỚP VỚI MODEL BẠN GỬI ---
-          // Khởi tạo giá trị mặc định (trống hoặc 0) vì lúc đăng ký chưa nhập
-          'name': '',           // Khớp với: data['name']
-          'title': '',          // Khớp với: data['title'] (VD: ThS.BS)
-          'experience': 0,      // Khớp với: int.tryParse(experience)
-          'address': '',        // Khớp với: data['address']
-          'imageUrl': '',       // Khớp với: data['imageUrl']
-          'specialties': [],    // Khớp với: List<String>
-          'bio': '',            // Khớp với: data['bio']
-          
-          // Các chỉ số phụ (nếu cần cho giao diện)
+          // Dữ liệu mặc định
+          'name': '',
+          'title': '',
+          'experience': 0,
+          'address': '',
+          'imageUrl': '',
+          'specialties': [],
+          'bio': '',
           'rating': 5.0,
           'patientCount': 0,
         });
+      } 
+      // --- TRƯỜNG HỢP: PHÒNG KHÁM ---
+      else if (selectedRole == 'clinic') {
+        await FirebaseFirestore.instance.collection('clinics').doc(uid).set({
+          'id': uid,
+          'uid': uid,
+          'email': email.text.trim(),
+          'role': 'clinic',
+          'createdAt': now,
+          // Dữ liệu mặc định cho Phòng khám
+          'name': '',           // Tên phòng khám
+          'address': '',        // Địa chỉ
+          'hotline': '',        // Số điện thoại liên hệ
+          'imageUrl': '',       // Logo/Ảnh phòng khám
+          'description': '',    // Giới thiệu
+          'services': [],       // Các dịch vụ cung cấp
+          'rating': 5.0,
+          'openHours': '',      // Giờ mở cửa
+        });
       }
+      // --- TRƯỜNG HỢP: BỆNH VIỆN ---
+      else if (selectedRole == 'hospital') {
+        await FirebaseFirestore.instance.collection('hospitals').doc(uid).set({
+          'id': uid,
+          'uid': uid,
+          'email': email.text.trim(),
+          'role': 'hospital',
+          'createdAt': now,
+          // Dữ liệu mặc định cho Bệnh viện
+          'name': '',           // Tên bệnh viện
+          'address': '',        // Địa chỉ
+          'hotline': '',        // Hotline cấp cứu/CSKH
+          'imageUrl': '',       // Ảnh bệnh viện
+          'description': '',    // Giới thiệu chung
+          'departments': [],    // Danh sách chuyên khoa
+          'rating': 5.0,
+          'website': '',        // Website bệnh viện
+        });
+      }
+
       // 5. Thông báo thành công
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +125,7 @@ class _SignupState extends State<Signup> {
       }
 
       await Future.delayed(const Duration(milliseconds: 500));
-      Get.offAll(Wrapper()); // Chuyển hướng về Wrapper để tự động điều hướng
+      Get.offAll(Wrapper()); 
       
     } on FirebaseAuthException catch (e) {
       String msg;
@@ -245,35 +281,25 @@ class _SignupState extends State<Signup> {
                 ),
                 const SizedBox(height: 20),
 
-                // Role selection: User / Doctor
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const Text(
+                  "Select Role:",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+
+                // --- GIAO DIỆN CHỌN ROLE (Cập nhật để chứa 4 loại) ---
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10.0, // Khoảng cách ngang
+                  runSpacing: 5.0, // Khoảng cách dọc
                   children: [
-                    Radio<String>(
-                      value: 'user',
-                      groupValue: selectedRole,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedRole = value!;
-                        });
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                    const Text("User"),
-                    const SizedBox(width: 20),
-                    Radio<String>(
-                      value: 'doctor',
-                      groupValue: selectedRole,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedRole = value!;
-                        });
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                    const Text("Doctor"),
+                    _buildRoleChip('user', 'User'),
+                    _buildRoleChip('doctor', 'Doctor'),
+                    _buildRoleChip('clinic', 'Clinic'),
+                    _buildRoleChip('hospital', 'Hospital'),
                   ],
                 ),
+                
                 const SizedBox(height: 28),
 
                 // Nút đăng ký
@@ -324,6 +350,26 @@ class _SignupState extends State<Signup> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Widget con để tạo nút chọn Role cho gọn code
+  Widget _buildRoleChip(String value, String label) {
+    final bool isSelected = selectedRole == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        setState(() {
+          selectedRole = value;
+        });
+      },
+      selectedColor: Colors.blue[100],
+      backgroundColor: Colors.grey[100],
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.blue[900] : Colors.black,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
   }

@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 // Import các model (Đi lùi 3 cấp thư mục)
 import '../../../models/doctor.dart';
 import '../../../models/patient_profile.dart';
-import 'success_screen.dart'; // Chúng ta sẽ tạo file này ngay sau đây
+import 'success_screen.dart';
 
 class ConfirmationScreen extends StatefulWidget {
   final Doctor doctor;
@@ -41,7 +41,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       if (user == null) throw Exception("Bạn chưa đăng nhập");
 
       // 1. Xử lý thời gian
-      final startTimeString = widget.selectedTimeSlot.split('-')[0].trim(); 
+      final startTimeString = widget.selectedTimeSlot.split('-')[0].trim();
       final timeParts = startTimeString.split(':');
       final hour = int.parse(timeParts[0]);
       final minute = int.parse(timeParts[1]);
@@ -60,24 +60,27 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       // 3. Chuẩn bị dữ liệu
       final Map<String, dynamic> appointmentData = {
         'userId': user.uid,
-        'bookingType': 'doctor',
+        'bookingType': 'doctor', // Loại lịch là doctor
         'status': 'confirmed',
         'bookingCode': bookingCode,
         'createdAt': FieldValue.serverTimestamp(),
         'appointmentTime': Timestamp.fromDate(appointmentDateTime),
         'timeSlot': widget.selectedTimeSlot,
-        
-        // Lưu ID bác sĩ để chat
-        'doctorId': widget.doctor.id, 
-        
-        // Lưu bản sao thông tin bác sĩ
-        'doctorInfo': {
+        // Thêm trường date
+        'date': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
+
+        // --- LƯU THÔNG TIN BÁC SĨ VÀO doctorData ---
+        'doctorId': widget.doctor.id,
+        'doctorData': { // Đổi key thành doctorData khớp với Model mới
           'name': widget.doctor.name,
           'title': widget.doctor.title,
           'specialty': widget.doctor.specialties.join(', '),
           'imageUrl': widget.doctor.imageUrl,
           'address': widget.doctor.address,
         },
+        // Đặt các trường khác thành null
+        'clinicData': null,
+        'hospitalData': null,
 
         // Lưu bản sao hồ sơ bệnh nhân
         'patientProfile': widget.patientProfile.toMap(),
@@ -86,7 +89,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       // 4. Ghi vào collection 'appointments'
       await FirebaseFirestore.instance.collection('appointments').add(appointmentData);
 
-      // 5. [ĐÃ BỔ SUNG] Chuyển sang màn hình Success KÈM DỮ LIỆU CHAT
+      // 5. Chuyển sang màn hình Success KÈM DỮ LIỆU CHAT
       Get.offAll(() => SuccessScreen(
         targetUserId: widget.doctor.id, // Truyền ID Bác sĩ để chat
         targetUserName: "${widget.doctor.title} ${widget.doctor.name}", // Truyền tên hiển thị
@@ -94,7 +97,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
     } catch (e) {
       Get.snackbar(
-        "Lỗi", 
+        "Lỗi",
         "Đặt lịch thất bại: $e",
         backgroundColor: Colors.red.withOpacity(0.5),
         colorText: Colors.white,

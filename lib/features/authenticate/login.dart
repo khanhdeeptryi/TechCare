@@ -6,6 +6,8 @@ import 'package:tech_care/features/authenticate/signup.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tech_care/homepage.dart';
 import 'package:tech_care/doctorhompage.dart';
+import 'package:tech_care/clinic_home_page.dart';
+import 'package:tech_care/hospital_home_page.dart';
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -51,6 +53,10 @@ class _LoginState extends State<Login> {
     if (role == 'doctor') {
       // TODO: thay DoctorHomePage() bằng màn hình doctor thực tế của bạn
       Get.offAll(() => const DoctorHomePage());
+    } else if (role == 'hospital') {
+      Get.offAll(() => const HospitalHomePage());
+    } else if (role == 'clinic') {
+      Get.offAll(() => const ClinicHomePage());
     } else {
       // TODO: thay HomePage() bằng màn hình user thực tế của bạn
       Get.offAll(() => const Homepage());
@@ -102,7 +108,6 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     final Color primaryColor = Colors.lightBlue.shade400;
-    final Color secondaryColor = Colors.lightBlue.shade100;
 
     return Scaffold(
       body: Container(

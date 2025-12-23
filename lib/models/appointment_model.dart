@@ -1,48 +1,24 @@
-// File: lib/models/appointment_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Appointment {
-  /// ID document Firestore
   final String id;
-
-  /// ID user đã đặt lịch
   final String userId;
-
-  /// Phân loại lịch hẹn: "doctor", "clinic", "hospital", ...
-  final String bookingType;
-
-  /// Trạng thái: "pending", "confirmed", "completed", "cancelled"
+  final String bookingType; // 'doctor', 'clinic', 'hospital'
   final String status;
-
-  /// Bản sao hồ sơ bệnh nhân tại thời điểm đặt lịch
   final Map<String, dynamic> patientProfile;
 
-  /// Bản sao thông tin bác sĩ / phòng khám tại thời điểm đặt lịch
-  /// (đối với clinic/hospital cũng tái sử dụng field này)
-  final Map<String, dynamic> doctorInfo;
+  // Dữ liệu riêng biệt
+  final Map<String, dynamic>? doctorData;
+  final Map<String, dynamic>? clinicData;
+  final Map<String, dynamic>? hospitalData;
 
-  /// Thời điểm diễn ra cuộc hẹn
   final Timestamp appointmentTime;
-
-  /// Thời điểm tạo lịch hẹn
   final Timestamp createdAt;
-
-  /// ID bác sĩ (nếu bookingType == "doctor")
   final String? doctorId;
-
-  /// ID phòng khám (nếu bookingType == "clinic")
   final String? clinicId;
-
-  /// ID bệnh viện (nếu bookingType == "hospital")
   final String? hospitalId;
-
-  /// Ngày khám (dùng để lọc slot theo ngày, dạng "yyyy-MM-dd")
-  final String date; // ví dụ "2025-11-20"
-
-  /// Khung giờ (ví dụ "17:30-17:40")
+  final String date;
   final String timeSlot;
-
-  /// Kết quả khám (sau khi bác sĩ cập nhật)
   final ExaminationResult? examinationResult;
 
   Appointment({
@@ -51,7 +27,9 @@ class Appointment {
     required this.bookingType,
     required this.status,
     required this.patientProfile,
-    required this.doctorInfo,
+    this.doctorData,
+    this.clinicData,
+    this.hospitalData,
     required this.appointmentTime,
     required this.createdAt,
     required this.date,
@@ -62,45 +40,79 @@ class Appointment {
     this.examinationResult,
   });
 
-  /// Tạo từ Firestore (data Map + documentId)
-  factory Appointment.fromFirestore(
-    Map<String, dynamic> data,
-    String documentId,
-  ) {
+  factory Appointment.fromFirestore(Map<String, dynamic> data, String documentId) {
+    // --- HÀM AN TOÀN ĐỂ PARSE NGÀY GIỜ ---
+    // Giúp tránh lỗi FormatException nếu data cũ lưu dạng chuỗi
+    Timestamp safeTimestamp(dynamic value) {
+      if (value is Timestamp) return value;
+      if (value is String) {
+        try {
+          return Timestamp.fromDate(DateTime.parse(value)); 
+        } catch (_) {
+          return Timestamp.now(); // Lỗi format thì lấy giờ hiện tại
+        }
+      }
+      return Timestamp.now();
+    }
+
+    // --- FALLBACK CHO DỮ LIỆU CŨ ---
+    // Tự động tìm dữ liệu cũ và gán vào model mới
+    Map<String, dynamic>? fallbackDoctor;
+    Map<String, dynamic>? fallbackClinic;
+    Map<String, dynamic>? fallbackHospital;
+
+    if (data['doctorData'] == null && data['doctorInfo'] != null) {
+      fallbackDoctor = Map<String, dynamic>.from(data['doctorInfo']);
+    }
+    
+    if (data['clinicData'] == null) {
+      if (data['clinicInfo'] != null) {
+        fallbackClinic = Map<String, dynamic>.from(data['clinicInfo']);
+      } else if (data['doctorInfo'] != null && (data['bookingType'] == 'clinic')) {
+        fallbackClinic = Map<String, dynamic>.from(data['doctorInfo']);
+      }
+    }
+
+    if (data['hospitalData'] == null) {
+      if (data['hospitalInfo'] != null) {
+        fallbackHospital = Map<String, dynamic>.from(data['hospitalInfo']);
+      } else if (data['doctorInfo'] != null && (data['bookingType'] == 'hospital')) {
+        fallbackHospital = Map<String, dynamic>.from(data['doctorInfo']);
+      }
+    }
+
     return Appointment(
       id: documentId,
       userId: data['userId'] ?? '',
-      bookingType: data['bookingType'] ?? '',
-      status: data['status'] ?? '',
-      patientProfile: Map<String, dynamic>.from(
-        data['patientProfile'] ?? <String, dynamic>{},
-      ),
-      doctorInfo: Map<String, dynamic>.from(
-        data['doctorInfo'] ?? <String, dynamic>{},
-      ),
-      appointmentTime: data['appointmentTime'] ?? Timestamp.now(),
-      createdAt: data['createdAt'] ?? Timestamp.now(),
+      bookingType: data['bookingType'] ?? 'doctor',
+      status: data['status'] ?? 'pending',
+      patientProfile: Map<String, dynamic>.from(data['patientProfile'] ?? {}),
+      
+      doctorData: data['doctorData'] != null ? Map<String, dynamic>.from(data['doctorData']) : fallbackDoctor,
+      clinicData: data['clinicData'] != null ? Map<String, dynamic>.from(data['clinicData']) : fallbackClinic,
+      hospitalData: data['hospitalData'] != null ? Map<String, dynamic>.from(data['hospitalData']) : fallbackHospital,
+
+      // Dùng hàm an toàn
+      appointmentTime: safeTimestamp(data['appointmentTime']),
+      createdAt: safeTimestamp(data['createdAt']),
+      
       doctorId: data['doctorId'],
       clinicId: data['clinicId'],
       hospitalId: data['hospitalId'],
       date: data['date'] ?? '',
       timeSlot: data['timeSlot'] ?? '',
       examinationResult: data['examinationResult'] != null
-          ? ExaminationResult.fromMap(
-              Map<String, dynamic>.from(data['examinationResult']),
-            )
+          ? ExaminationResult.fromMap(Map<String, dynamic>.from(data['examinationResult']))
           : null,
     );
   }
 
-  /// Convert ra Map để lưu Firestore
   Map<String, dynamic> toMap() {
-    return {
+    final map = {
       'userId': userId,
       'bookingType': bookingType,
       'status': status,
       'patientProfile': patientProfile,
-      'doctorInfo': doctorInfo,
       'appointmentTime': appointmentTime,
       'createdAt': createdAt,
       'doctorId': doctorId,
@@ -108,89 +120,22 @@ class Appointment {
       'hospitalId': hospitalId,
       'date': date,
       'timeSlot': timeSlot,
-      if (examinationResult != null)
-        'examinationResult': examinationResult!.toMap(),
     };
-  }
 
-  /// Factory tiện cho case đặt lịch BÁC SĨ
-  factory Appointment.forDoctorBooking({
-    required String id,
-    required String userId,
-    required Map<String, dynamic> patientProfile,
-    required Map<String, dynamic> doctorInfo,
-    required String doctorId,
-    required String date,
-    required String timeSlot,
-  }) {
-    final now = Timestamp.now();
+    if (doctorData != null) map['doctorData'] = doctorData!;
+    if (clinicData != null) map['clinicData'] = clinicData!;
+    if (hospitalData != null) map['hospitalData'] = hospitalData!;
+    if (examinationResult != null) map['examinationResult'] = examinationResult!.toMap();
 
-    return Appointment(
-      id: id,
-      userId: userId,
-      bookingType: 'doctor',
-      status: 'pending', // mới tạo
-      patientProfile: patientProfile,
-      doctorInfo: doctorInfo,
-      date: date,
-      timeSlot: timeSlot,
-      doctorId: doctorId,
-      clinicId: null,
-      hospitalId: null,
-      appointmentTime: now, // nếu muốn chuẩn hơn, convert từ date + timeSlot
-      createdAt: now,
-      examinationResult: null,
-    );
-  }
-
-  /// Factory tiện cho case đặt lịch PHÒNG KHÁM (clinic)
-  factory Appointment.forClinicBooking({
-    required String id,
-    required String userId,
-    required Map<String, dynamic> patientProfile,
-    required Map<String, dynamic> clinicInfo,
-    required String clinicId,
-    required String date,
-    required String timeSlot,
-  }) {
-    final now = Timestamp.now();
-
-    return Appointment(
-      id: id,
-      userId: userId,
-      bookingType: 'clinic', // phân loại là clinic
-      status: 'pending',
-      patientProfile: patientProfile,
-      // Dùng chung field doctorInfo để chứa thông tin clinic
-      doctorInfo: clinicInfo,
-      appointmentTime: now,
-      createdAt: now,
-      date: date,
-      timeSlot: timeSlot,
-      doctorId: null,
-      clinicId: clinicId,
-      hospitalId: null,
-      examinationResult: null,
-    );
+    return map;
   }
 }
 
-// ================== ExaminationResult ==================
-
 class ExaminationResult {
-  /// Triệu chứng
   final String symptoms;
-
-  /// Chẩn đoán
   final String diagnosis;
-
-  /// Dặn dò của bác sĩ
   final String doctorNotes;
-
-  /// Đơn thuốc
   final List<PrescriptionItem> prescription;
-
-  /// Link file X-quang, xét nghiệm, v.v. (Firebase Storage URLs)
   final List<String> attachments;
 
   ExaminationResult({
@@ -207,8 +152,7 @@ class ExaminationResult {
       diagnosis: data['diagnosis'] ?? '',
       doctorNotes: data['doctorNotes'] ?? '',
       prescription: (data['prescription'] as List<dynamic>? ?? [])
-          .map((item) =>
-              PrescriptionItem.fromMap(Map<String, dynamic>.from(item)))
+          .map((item) => PrescriptionItem.fromMap(Map<String, dynamic>.from(item)))
           .toList(),
       attachments: List<String>.from(data['attachments'] ?? []),
     );
@@ -224,8 +168,6 @@ class ExaminationResult {
     };
   }
 }
-
-// ================== PrescriptionItem ==================
 
 class PrescriptionItem {
   final String name;

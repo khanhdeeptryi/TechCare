@@ -6,6 +6,8 @@ import 'package:tech_care/features/authenticate/login.dart';
 // Import 2 trang chủ
 import 'package:tech_care/homepage.dart'; 
 import 'package:tech_care/doctorhompage.dart';
+import 'clinic_home_page.dart';
+import 'hospital_home_page.dart';
 
 class Wrapper extends StatelessWidget {
   const Wrapper({super.key});
@@ -58,16 +60,15 @@ class Wrapper extends StatelessWidget {
                 final String role = userData['role'] ?? 'user';
 
                 if (role == 'doctor') {
-                  return const DoctorHomePage();
+                    return const DoctorHomePage();
+                } else if (role == 'clinic') {
+                    return const ClinicHomePage();
+                } else if (role == 'hospital') {
+                    return const HospitalHomePage();
                 } else {
-                  return const Homepage();
+                    return const Homepage();
                 }
-              }
-
-              // --- TRƯỜNG HỢP RỦI RO (Edge Case) ---
-              // User đã đăng nhập Auth thành công nhưng KHÔNG TÌM THẤY dữ liệu trong Firestore.
-              // (Ví dụ: Document bị xóa nhầm, hoặc lỗi mạng lúc đăng ký).
-              // Hành động: Đăng xuất ngay để user không bị kẹt, và trả về Login.
+              }       
               FirebaseAuth.instance.signOut(); 
               return const Login();
             },

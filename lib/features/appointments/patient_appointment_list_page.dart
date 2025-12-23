@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:tech_care/models/appointment_model.dart'; 
+import 'package:get/get.dart';
+import 'package:tech_care/models/appointment_model.dart';
+// Nhớ import trang chi tiết nếu có
 
 class PatientAppointmentListPage extends StatelessWidget {
   const PatientAppointmentListPage({super.key});
@@ -30,9 +32,7 @@ class PatientAppointmentListPage extends StatelessWidget {
         backgroundColor: Colors.grey[100],
         body: const TabBarView(
           children: [
-            // Tab 1: Lịch sắp tới
             AppointmentListTab(statuses: ['pending', 'confirmed']),
-            // Tab 2: Lịch sử
             AppointmentListTab(statuses: ['completed', 'cancelled']),
           ],
         ),
@@ -41,39 +41,24 @@ class PatientAppointmentListPage extends StatelessWidget {
   }
 }
 
-// --- WIDGET CON: DANH SÁCH LỊCH ---
 class AppointmentListTab extends StatelessWidget {
   final List<String> statuses;
-
-  const AppointmentListTab({
-    super.key,
-    required this.statuses,
-  });
+  const AppointmentListTab({super.key, required this.statuses});
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
-    // Query: Lọc theo userId và status
     final Query query = FirebaseFirestore.instance
         .collection('appointments')
         .where('userId', isEqualTo: user?.uid)
         .where('status', whereIn: statuses)
-        // --- SỬA Ở ĐÂY ---
-        // descending: true -> Ngày lớn (mới nhất/xa nhất) xếp lên đầu
-        .orderBy('appointmentTime', descending: true); 
+        .orderBy('appointmentTime', descending: true);
 
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text("Lỗi: ${snapshot.error}"));
-        }
-
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snapshot.hasError) return Center(child: Text("Lỗi: ${snapshot.error}"));
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Column(
@@ -81,17 +66,13 @@ class AppointmentListTab extends StatelessWidget {
               children: [
                 Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
                 const SizedBox(height: 10),
-                Text(
-                  "Bạn chưa có lịch hẹn nào",
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
+                Text("Không có lịch hẹn nào", style: TextStyle(color: Colors.grey[600])),
               ],
             ),
           );
         }
 
         final docs = snapshot.data!.docs;
-
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
@@ -106,153 +87,151 @@ class AppointmentListTab extends StatelessWidget {
   }
 
   Widget _buildPatientAppointmentCard(Appointment appointment) {
-    // 1. Xác định tên Bác sĩ / Phòng khám / Bệnh viện
+    // 1. Biến hiển thị mặc định
     String titleName = "Dịch vụ y tế";
     String subInfo = "";
     String imageUrl = "";
+    IconData placeholderIcon = Icons.local_hospital;
 
-    // Xử lý an toàn null cho doctorInfo
-    final info = appointment.doctorInfo;
+    // 2. Logic "Dò tìm dữ liệu" (Fix lỗi Lịch sử)
+    // Xác định xem nên lấy data từ map nào (doctor/clinic/hospital)
     
-    if (appointment.bookingType == 'doctor') {
-      titleName = "BS. ${info['name'] ?? ''}";
-      subInfo = info['specialty'] ?? '';
-      imageUrl = info['imageUrl'] ?? '';
-    } else if (appointment.bookingType == 'clinic') {
-      titleName = info['name'] ?? 'Phòng khám';
-      subInfo = info['address'] ?? '';
-      imageUrl = info['imageUrl'] ?? '';
-    } else {
-       // Fallback cho các loại khác hoặc lỗi data
-       titleName = info['name'] ?? 'Y tế';
-       subInfo = info['address'] ?? '';
+    Map<String, dynamic>? data;
+    String type = (appointment.bookingType).toLowerCase().trim();
+
+    // Bước A: Thử lấy theo đúng loại bookingType
+    if (type == 'doctor') data = appointment.doctorData;
+    else if (type == 'clinic') data = appointment.clinicData;
+    else if (type == 'hospital') data = appointment.hospitalData;
+
+    // Bước B: Nếu không có (do data cũ bị null hoặc sai type), tự động dò các trường còn lại
+    if (data == null) {
+      if (appointment.doctorData != null) {
+        data = appointment.doctorData;
+        type = 'doctor';
+      } else if (appointment.clinicData != null) {
+        data = appointment.clinicData;
+        type = 'clinic';
+      } else if (appointment.hospitalData != null) {
+        data = appointment.hospitalData;
+        type = 'hospital';
+      }
     }
 
-    // 2. Format ngày giờ
-    final dateStr = DateFormat('dd/MM/yyyy').format(appointment.appointmentTime.toDate());
-    final timeStr = appointment.timeSlot;
+    // 3. Hiển thị dữ liệu sau khi đã dò tìm
+    if (data != null) {
+      // --- TRƯỜNG HỢP BÁC SĨ ---
+      if (type == 'doctor') {
+        titleName = "BS. ${data['name'] ?? 'Không tên'}";
+        // Xử lý chuyên khoa (có thể là List hoặc String)
+        var specs = data['specialties'] ?? data['specialty']; 
+        if (specs is List) {
+          subInfo = specs.join(", ");
+        } else {
+          subInfo = specs?.toString() ?? data['title'] ?? 'Bác sĩ chuyên khoa';
+        }
+        placeholderIcon = Icons.person;
+      } 
+      // --- TRƯỜNG HỢP PHÒNG KHÁM ---
+      else if (type == 'clinic') {
+        titleName = data['name'] ?? 'Phòng khám';
+        subInfo = data['address'] ?? 'Địa chỉ phòng khám';
+        placeholderIcon = Icons.store;
+      } 
+      // --- TRƯỜNG HỢP BỆNH VIỆN ---
+      else if (type == 'hospital') {
+        titleName = data['name'] ?? 'Bệnh viện';
+        subInfo = data['address'] ?? 'Địa chỉ bệnh viện';
+        placeholderIcon = Icons.apartment;
+      }
+      
+      imageUrl = data['imageUrl'] ?? '';
+    }
 
-    // 3. Màu sắc trạng thái
+    // --- PHẦN UI (Card) ---
+    final DateTime dateTime = appointment.appointmentTime.toDate();
+    final String dateStr = DateFormat('dd/MM/yyyy').format(dateTime);
+    final String timeStr = appointment.timeSlot.isNotEmpty 
+        ? appointment.timeSlot 
+        : DateFormat('HH:mm').format(dateTime);
+
     String statusText;
     Color statusColor;
     Color statusBgColor;
 
     switch (appointment.status) {
       case 'confirmed':
-        statusText = 'Đã xác nhận';
-        statusColor = Colors.green;
-        statusBgColor = Colors.green.shade50;
-        break;
+        statusText = 'Đã xác nhận'; statusColor = Colors.green[700]!; statusBgColor = Colors.green[50]!; break;
       case 'pending':
-        statusText = 'Chờ xác nhận';
-        statusColor = Colors.orange;
-        statusBgColor = Colors.orange.shade50;
-        break;
+        statusText = 'Chờ xác nhận'; statusColor = Colors.orange[800]!; statusBgColor = Colors.orange[50]!; break;
       case 'completed':
-        statusText = 'Đã hoàn thành';
-        statusColor = Colors.blue;
-        statusBgColor = Colors.blue.shade50;
-        break;
+        statusText = 'Hoàn thành'; statusColor = Colors.blue[700]!; statusBgColor = Colors.blue[50]!; break;
       case 'cancelled':
-        statusText = 'Đã hủy';
-        statusColor = Colors.red;
-        statusBgColor = Colors.red.shade50;
-        break;
+        statusText = 'Đã hủy'; statusColor = Colors.red[700]!; statusBgColor = Colors.red[50]!; break;
       default:
-        statusText = 'Không rõ';
-        statusColor = Colors.grey;
-        statusBgColor = Colors.grey.shade50;
+        statusText = 'Không rõ'; statusColor = Colors.grey[700]!; statusBgColor = Colors.grey[200]!;
     }
 
-    return Container(
+    return Card(
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Avatar
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.grey[200],
-                  image: imageUrl.isNotEmpty
-                      ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                      : null,
-                ),
-                child: imageUrl.isEmpty ? const Icon(Icons.local_hospital, color: Colors.grey) : null,
-              ),
-              const SizedBox(width: 12),
-              
-              // Thông tin chính
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      titleName,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subInfo,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusBgColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.bold),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+           // Điều hướng đến chi tiết (nếu có)
+           // Get.to(() => MedicalRecordDetailScreen(appointment: appointment));
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: Colors.blue),
-                  const SizedBox(width: 6),
-                  Text(dateStr, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Container(
+                    width: 60, height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[100],
+                      image: imageUrl.isNotEmpty ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover) : null,
+                    ),
+                    child: imageUrl.isEmpty ? Icon(placeholderIcon, color: Colors.grey, size: 30) : null,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(titleName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text(subInfo, style: TextStyle(fontSize: 13, color: Colors.grey[600]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
                 ],
               ),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.access_time, size: 16, color: Colors.blue),
-                  const SizedBox(width: 6),
-                  Text(timeStr, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [Icon(Icons.calendar_today, size: 14, color: Colors.blue[600]), const SizedBox(width: 6), Text(dateStr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))]),
+                      const SizedBox(height: 4),
+                      Row(children: [Icon(Icons.access_time, size: 14, color: Colors.blue[600]), const SizedBox(width: 6), Text(timeStr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))]),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(20)),
+                    child: Text(statusText, style: TextStyle(fontSize: 12, color: statusColor, fontWeight: FontWeight.bold)),
+                  )
                 ],
-              ),
+              )
             ],
-          )
-        ],
+          ),
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:tech_care/features/account/update_personal_info_page.dart';
-import 'package:tech_care/models/appointment_model.dart'; // Import model Appointment
+import 'package:tech_care/models/appointment_model.dart'; 
 
 class HealthProfilePage extends StatefulWidget {
   const HealthProfilePage({super.key});
@@ -65,17 +65,14 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
       body: TabBarView(
         controller: _tabController,
         children: [
-          // TAB 1: THÔNG TIN CÁ NHÂN (Code cũ)
           _buildGeneralInfoTab(user),
-          
-          // TAB 2: LỊCH SỬ KHÁM BỆNH (Code mới)
           _buildHistoryTab(user),
         ],
       ),
     );
   }
 
-  // --- TAB 1: THÔNG TIN CHUNG ---
+  // --- TAB 1: THÔNG TIN CHUNG (Giữ nguyên logic cũ của bạn) ---
   Widget _buildGeneralInfoTab(User user) {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
@@ -83,13 +80,11 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (!snapshot.hasData || snapshot.data?.data() == null) {
           return const Center(child: Text("Chưa có dữ liệu hồ sơ"));
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
-
         final String fullName = data['fullName'] ?? 'Chưa cập nhật';
         final String height = data['height'] ?? '--';
         final String weight = data['weight'] ?? '--';
@@ -103,7 +98,6 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Thẻ Avatar
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -134,7 +128,6 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
                   ],
                 ),
               ),
-              
               const SizedBox(height: 20),
               const Text("CHỈ SỐ CƠ THỂ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 10),
@@ -145,7 +138,6 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
                   _buildInfoCard(Icons.monitor_weight, "Cân nặng", "$weight kg", Colors.green),
                 ],
               ),
-
               const SizedBox(height: 20),
               const Text("THÔNG TIN PHÁP LÝ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 10),
@@ -160,11 +152,9 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
               const Text("KHO HỒ SƠ BỆNH ÁN (OFFLINE)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 10),
-
               if (images.isEmpty)
                 Center(
                   child: Column(
@@ -224,7 +214,7 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
     );
   }
 
-  // --- TAB 2: LỊCH SỬ KHÁM (Code mới) ---
+  // --- TAB 2: LỊCH SỬ KHÁM ---
   Widget _buildHistoryTab(User user) {
     final Query query = FirebaseFirestore.instance
         .collection('appointments')
@@ -238,11 +228,9 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (snapshot.hasError) {
           return Center(child: Text("Lỗi: ${snapshot.error}"));
         }
-
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Column(
@@ -271,11 +259,28 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
     );
   }
 
-  // --- WIDGET CON CHO TAB 2 ---
+  // --- WIDGET CON CHO TAB 2 (Sửa logic lấy tên) ---
   Widget _buildRecordCard(BuildContext context, Appointment appointment) {
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(appointment.appointmentTime.toDate());
     final diagnosis = appointment.examinationResult?.diagnosis ?? "Chưa có chẩn đoán";
-    final doctorName = appointment.doctorInfo['name'] ?? "Bác sĩ";
+    
+    // --- [SỬA LẠI] Logic lấy tên nhà cung cấp ---
+    String providerName = "Dịch vụ y tế";
+    IconData providerIcon = Icons.local_hospital;
+
+    if (appointment.bookingType == 'doctor' && appointment.doctorData != null) {
+      providerName = "BS. ${appointment.doctorData!['name'] ?? ''}";
+      providerIcon = Icons.person;
+    } 
+    else if (appointment.bookingType == 'clinic' && appointment.clinicData != null) {
+      providerName = appointment.clinicData!['name'] ?? 'Phòng khám';
+      providerIcon = Icons.store;
+    } 
+    else if (appointment.bookingType == 'hospital' && appointment.hospitalData != null) {
+      providerName = appointment.hospitalData!['name'] ?? 'Bệnh viện';
+      providerIcon = Icons.apartment;
+    }
+    // ------------------------------------------
 
     return Card(
       elevation: 2,
@@ -307,9 +312,11 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.person, size: 16, color: Colors.grey),
+                  Icon(providerIcon, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
-                  Text("BS. $doctorName", style: const TextStyle(color: Colors.grey)),
+                  Expanded(
+                    child: Text(providerName, style: const TextStyle(color: Colors.grey), overflow: TextOverflow.ellipsis),
+                  ),
                 ],
               ),
             ],
@@ -356,7 +363,6 @@ class _HealthProfilePageState extends State<HealthProfilePage> with SingleTicker
   }
 }
 
-// --- MÀN HÌNH CHI TIẾT (Đơn thuốc) ---
 // --- MÀN HÌNH CHI TIẾT (Đơn thuốc & Hình ảnh) ---
 class MedicalRecordDetailScreen extends StatelessWidget {
   final Appointment appointment;
@@ -365,14 +371,31 @@ class MedicalRecordDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final result = appointment.examinationResult;
+    
+    // --- [SỬA LẠI] Logic lấy tên nhà cung cấp cho AppBar ---
+    String providerName = "Đơn vị y tế";
+    if (appointment.bookingType == 'doctor' && appointment.doctorData != null) {
+      providerName = "BS. ${appointment.doctorData!['name'] ?? ''}";
+    } else if (appointment.bookingType == 'clinic' && appointment.clinicData != null) {
+      providerName = appointment.clinicData!['name'] ?? 'Phòng khám';
+    } else if (appointment.bookingType == 'hospital' && appointment.hospitalData != null) {
+      providerName = appointment.hospitalData!['name'] ?? 'Bệnh viện';
+    }
+    // -----------------------------------------------------
+
     if (result == null) return const Scaffold(body: Center(child: Text("Lỗi dữ liệu")));
 
-    // Lấy danh sách ảnh đính kèm (nếu có)
-    final List<String> attachments = result.attachments ?? [];
+    final List<String> attachments = result.attachments;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Chi tiết khám bệnh"), 
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Chi tiết khám bệnh", style: TextStyle(fontSize: 18)),
+            Text(providerName, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
         backgroundColor: Colors.white, 
         foregroundColor: Colors.black, 
         elevation: 1
@@ -388,7 +411,6 @@ class MedicalRecordDetailScreen extends StatelessWidget {
             
             const SizedBox(height: 20),
             
-            // --- [MỚI] HIỂN THỊ HÌNH ẢNH ĐÍNH KÈM ---
             if (attachments.isNotEmpty) ...[
               const Text("Hình ảnh / Tài liệu đính kèm", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -396,7 +418,7 @@ class MedicalRecordDetailScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // 3 ảnh 1 hàng
+                  crossAxisCount: 3, 
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
@@ -404,7 +426,6 @@ class MedicalRecordDetailScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
-                      // Xem ảnh full màn hình (dùng lại PhotoViewer)
                       Get.dialog(
                         Stack(
                           children: [
@@ -436,7 +457,6 @@ class MedicalRecordDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             ],
-            // ----------------------------------------
 
             const Text("Đơn thuốc", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),

@@ -42,7 +42,7 @@ class _HospitalConfirmationScreenState
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("Bạn chưa đăng nhập");
 
-      // Tách giờ bắt đầu
+      // 1. Tách giờ bắt đầu để tạo DateTime chính xác
       final startTimeString =
           widget.selectedTimeSlot.split('-')[0].trim();
       final timeParts = startTimeString.split(':');
@@ -57,38 +57,44 @@ class _HospitalConfirmationScreenState
         minute,
       );
 
+      // 2. Tạo mã Booking
       final String bookingCode =
           'YMA${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
-      final String dateStr =
-          DateFormat('yyyy-MM-dd').format(widget.selectedDate);
-
+      // 3. Chuẩn bị dữ liệu lưu vào Firestore
       final Map<String, dynamic> appointmentData = {
         'userId': user.uid,
-        'bookingType': 'hospital',
+        'bookingType': 'hospital', // QUAN TRỌNG: Loại lịch là hospital
         'status': 'confirmed',
         'bookingCode': bookingCode,
         'createdAt': FieldValue.serverTimestamp(),
         'appointmentTime': Timestamp.fromDate(appointmentDateTime),
-        'date': dateStr,
         'timeSlot': widget.selectedTimeSlot,
+        // Thêm trường date để tiện lọc/hiển thị
+        'date': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
 
+        // --- LƯU THÔNG TIN BỆNH VIỆN VÀO hospitalData ---
         'hospitalId': widget.hospital.id,
-        'hospitalInfo': {
+        'hospitalData': { // Đổi key thành hospitalData khớp với Model mới
           'name': widget.hospital.name,
           'address': widget.hospital.address,
           'imageUrl': widget.hospital.imageUrl,
         },
+        // Đặt các trường khác thành null để tránh nhầm lẫn
+        'doctorData': null,
+        'clinicData': null,
 
         'serviceType': widget.serviceType, // normal | vip
 
         'patientProfile': widget.patientProfile.toMap(),
       };
 
+      // 4. Ghi vào Firestore
       await FirebaseFirestore.instance
           .collection('appointments')
           .add(appointmentData);
 
+      // 5. Chuyển trang thành công
       Get.offAll(() => const SuccessScreen());
     } catch (e) {
       Get.snackbar(
@@ -108,8 +114,8 @@ class _HospitalConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('EEEE, dd/MM/yyyy', 'vi_VN')
-        .format(widget.selectedDate);
+    // Định dạng ngày hiển thị (Cần initializeDateFormatting() ở main.dart để dùng 'vi_VN')
+    final dateStr = DateFormat('EEEE, dd/MM/yyyy').format(widget.selectedDate);
     final serviceLabel =
         widget.serviceType == 'vip' ? 'Khám VIP' : 'Khám thường';
 

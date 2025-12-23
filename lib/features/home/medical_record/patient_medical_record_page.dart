@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:tech_care/models/appointment_model.dart';
-import 'package:tech_care/features/health_profile/health_profile_page.dart'; // Để dùng lại MedicalRecordDetailScreen
+import 'package:tech_care/features/appointments/medical_record_detail_screen.dart'; // Import đúng file chi tiết
 
 class PatientMedicalRecordPage extends StatelessWidget {
   final String patientId;
   final String patientName;
 
-  const PatientMedicalRecordPage({super.key, required this.patientId, required this.patientName});
+  const PatientMedicalRecordPage({
+    super.key, 
+    required this.patientId, 
+    required this.patientName
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +37,11 @@ class PatientMedicalRecordPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          
+          if (snapshot.hasError) {
+             return Center(child: Text("Lỗi: ${snapshot.error}"));
+          }
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text("Bệnh nhân này chưa có lịch sử khám bệnh."));
           }
@@ -44,8 +53,11 @@ class PatientMedicalRecordPage extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final data = docs[index].data() as Map<String, dynamic>;
+              // Parse dữ liệu bằng Model mới (có fallback)
               final appointment = Appointment.fromFirestore(data, docs[index].id);
-              final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(appointment.appointmentTime.toDate());
+              
+              final date = appointment.appointmentTime.toDate();
+              final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(date);
               final diagnosis = appointment.examinationResult?.diagnosis ?? "Chưa có chẩn đoán";
 
               return Card(
@@ -57,7 +69,7 @@ class PatientMedicalRecordPage extends StatelessWidget {
                     child: const Icon(Icons.history_edu, color: Colors.green),
                   ),
                   title: Text(dateStr, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text("Chẩn đoán: $diagnosis"),
+                  subtitle: Text("Chẩn đoán: $diagnosis", maxLines: 1, overflow: TextOverflow.ellipsis),
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -70,14 +82,23 @@ class PatientMedicalRecordPage extends StatelessWidget {
                           const SizedBox(height: 8),
                           _rowDetail("Lời dặn:", appointment.examinationResult?.doctorNotes ?? "--"),
                           const SizedBox(height: 10),
-                          // Nút xem chi tiết đầy đủ
+                          
+                          // Nút xem chi tiết đầy đủ (Ảnh, tên bác sĩ...)
                           Align(
                             alignment: Alignment.centerRight,
-                            child: TextButton(
+                            child: ElevatedButton.icon(
                               onPressed: () {
-                                Get.to(() => MedicalRecordDetailScreen(appointment: appointment));
+                                // --- SỬA LỖI TẠI ĐÂY ---
+                                // Bỏ dấu "() =>" đi, truyền trực tiếp Widget vào
+                                Get.to(MedicalRecordDetailScreen(appointment: appointment));
                               },
-                              child: const Text("Xem chi tiết đầy đủ"),
+                              icon: const Icon(Icons.visibility, size: 16),
+                              label: const Text("Xem chi tiết đầy đủ"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[50],
+                                foregroundColor: Colors.blue[800],
+                                elevation: 0
+                              ),
                             ),
                           )
                         ],
@@ -97,8 +118,8 @@ class PatientMedicalRecordPage extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 80, child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))),
-        Expanded(child: Text(value)),
+        SizedBox(width: 90, child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
       ],
     );
   }

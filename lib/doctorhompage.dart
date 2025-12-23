@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tech_care/features/account/account.dart';
 import 'package:tech_care/features/chat/doctor_conversation_list_page.dart';
 import 'package:tech_care/features/home/tabs/doctor_dashboard_tab.dart'; // Tab 1
 import 'package:tech_care/features/home/tabs/doctor_schedule_tab.dart'; // Tab 2

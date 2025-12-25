@@ -7,6 +7,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
+// [QUAN TRỌNG] Import màn hình OCR
+import 'package:tech_care/features/patient/patient_upload_record_screen.dart';
+
 class UpdatePersonalInfoPage extends StatefulWidget {
   const UpdatePersonalInfoPage({super.key});
 
@@ -21,9 +24,9 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   
-  // --- [MỚI] Controller Pháp lý ---
-  final TextEditingController _cccdController = TextEditingController(); // Căn cước công dân
-  final TextEditingController _bhytController = TextEditingController(); // Bảo hiểm y tế
+  // --- Controller Pháp lý ---
+  final TextEditingController _cccdController = TextEditingController(); 
+  final TextEditingController _bhytController = TextEditingController(); 
 
   // --- Controller Chỉ số ---
   final TextEditingController _heightController = TextEditingController();
@@ -32,7 +35,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
   String _selectedGender = 'Nam';
   bool _isLoading = false;
   
-  // Biến quản lý ảnh
+  // Biến quản lý ảnh (Upload thủ công)
   final ImagePicker _picker = ImagePicker();
   List<XFile> _selectedImages = []; 
   
@@ -60,7 +63,6 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
         _addressController.text = data['address'] ?? '';
         _dobController.text = data['dateOfBirth'] ?? '';
         
-        // --- [MỚI] Load CCCD & BHYT ---
         _cccdController.text = data['cccd'] ?? '';
         _bhytController.text = data['bhyt'] ?? '';
 
@@ -80,7 +82,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
     }
   }
 
-  // 2. Chọn ảnh
+  // 2. Chọn ảnh thủ công
   Future<void> _pickImages() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
@@ -101,13 +103,14 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
     });
   }
 
-  // 4. Upload ảnh
+  // 4. Upload ảnh lên Storage
   Future<List<String>> _uploadImagesToStorage() async {
     List<String> downloadUrls = [];
     try {
       for (var xFile in _selectedImages) {
         File file = File(xFile.path);
         String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+        // Lưu vào folder riêng của user
         Reference ref = FirebaseStorage.instance.ref().child('users/${user!.uid}/medical_records/$fileName.jpg');
         
         UploadTask task = ref.putFile(file);
@@ -122,13 +125,13 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
     return downloadUrls;
   }
 
-  // 5. Lưu dữ liệu
+  // 5. Lưu toàn bộ dữ liệu
   Future<void> _saveUserData() async {
     if (user == null) return;
     setState(() => _isLoading = true);
 
     try {
-      // Upload ảnh trước
+      // Upload ảnh trước (nếu có)
       List<String> newImageUrls = [];
       if (_selectedImages.isNotEmpty) {
         Get.snackbar("Đang xử lý", "Đang tải ảnh hồ sơ lên...", backgroundColor: Colors.blue, colorText: Colors.white);
@@ -143,17 +146,20 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
         'gender': _selectedGender,
         'height': _heightController.text.trim(),
         'weight': _weightController.text.trim(),
-        // --- [MỚI] Lưu CCCD & BHYT ---
         'cccd': _cccdController.text.trim(),
         'bhyt': _bhytController.text.trim(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
+      // Nếu có ảnh mới thì thêm vào mảng images
       if (newImageUrls.isNotEmpty) {
         updateData['medicalRecordImages'] = FieldValue.arrayUnion(newImageUrls);
       }
 
+      // Cập nhật Firestore
       await FirebaseFirestore.instance.collection('users').doc(user!.uid).update(updateData);
+      
+      // Cập nhật Display Name của Auth (để hiện tên đúng ở các màn hình khác)
       await user!.updateDisplayName(_fullNameController.text.trim());
 
       setState(() { _selectedImages.clear(); });
@@ -169,6 +175,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
     }
   }
 
+  // Chọn ngày sinh
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -186,7 +193,12 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Cập nhật thông tin"), backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 1),
+      appBar: AppBar(
+        title: const Text("Cập nhật thông tin"), 
+        backgroundColor: Colors.white, 
+        foregroundColor: Colors.black, 
+        elevation: 1
+      ),
       backgroundColor: Colors.grey[50],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -227,9 +239,10 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
                       ),
                     ],
                   ),
+                  
                   const SizedBox(height: 24), const Divider(), const SizedBox(height: 10),
 
-                  // --- [MỚI] THÔNG TIN PHÁP LÝ ---
+                  // --- THÔNG TIN PHÁP LÝ ---
                   const Text("Thông tin pháp lý", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 10),
                   _buildTextField("Số CCCD / CMND", "Nhập số căn cước", _cccdController, Icons.credit_card, inputType: TextInputType.number),
@@ -238,6 +251,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
                   
                   const SizedBox(height: 24), const Divider(), const SizedBox(height: 10),
 
+                  // --- CHỈ SỐ CƠ THỂ ---
                   const Text("Chỉ số cơ thể", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 10),
                   Row(
@@ -250,17 +264,47 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
 
                   const SizedBox(height: 24), const Divider(), const SizedBox(height: 10),
 
-                  const Text("Hồ sơ bệnh án (Tải lên ảnh)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  // --- [KHU VỰC HỒ SƠ BỆNH ÁN] ---
+                  const Text("Hồ sơ bệnh án", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 10),
+                  
+                  // --- 1. NÚT OCR: QUÉT BỆNH ÁN CŨ (Tính năng mới) ---
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Chuyển sang màn hình OCR
+                        // Dùng Navigator.push thay vì Get.to để tránh lỗi format nếu có
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => PatientUploadRecordScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.document_scanner, color: Colors.white),
+                      label: const Text("QUÉT BỆNH ÁN CŨ (OCR)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange[800], // Màu nổi bật
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  const Center(child: Text("HOẶC", style: TextStyle(color: Colors.grey, fontSize: 12))),
+                  const SizedBox(height: 12),
+
+                  // --- 2. NÚT UPLOAD ẢNH THỦ CÔNG ---
                   InkWell(
                     onTap: _pickImages,
                     child: Container(
                       width: double.infinity, padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.blue.withOpacity(0.5))),
-                      child: Column(children: [Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.blue[700]), const SizedBox(height: 8), Text("Nhấn để tải ảnh lên", style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold))]),
+                      child: Column(children: [Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.blue[700]), const SizedBox(height: 8), Text("Tải ảnh thủ công (Không trích xuất)", style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold))]),
                     ),
                   ),
 
+                  // Hiển thị ảnh thủ công đã chọn
                   if (_selectedImages.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -281,12 +325,13 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
                   _buildTextField("Địa chỉ", "Nhập địa chỉ", _addressController, Icons.home),
                   const SizedBox(height: 30),
 
+                  // Nút Lưu chính
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _saveUserData,
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text("LƯU & TẢI LÊN", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: const Text("CẬP NHẬT HỒ SƠ", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 20),

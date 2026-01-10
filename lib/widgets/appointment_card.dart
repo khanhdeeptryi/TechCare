@@ -9,12 +9,12 @@ class AppointmentCard extends StatelessWidget {
   final VoidCallback? onViewResult; // Callback xem kết quả
 
   const AppointmentCard({
-    Key? key, 
+    super.key, 
     required this.appointment,
     this.onTap,
     this.onCancel,
     this.onViewResult,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

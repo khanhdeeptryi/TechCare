@@ -7,7 +7,7 @@ import '../../../widgets/clinic_card.dart';
 import 'clinic_booking_screen.dart'; // File ở bước 4
 
 class ClinicBookingPage extends StatefulWidget {
-  const ClinicBookingPage({Key? key}) : super(key: key);
+  const ClinicBookingPage({super.key});
 
   @override
   State<ClinicBookingPage> createState() => _ClinicBookingPageState();
@@ -138,7 +138,7 @@ class _ClinicBookingPageState extends State<ClinicBookingPage> {
                 setState(() => _selectedLocation = loc);
                 Navigator.pop(context);
               },
-            )).toList()
+            ))
           ],
         );
       },

@@ -37,7 +37,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
   
   // Biến quản lý ảnh (Upload thủ công)
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _selectedImages = []; 
+  final List<XFile> _selectedImages = []; 
   
   final User? user = FirebaseAuth.instance.currentUser;
 
@@ -120,7 +120,7 @@ class _UpdatePersonalInfoPageState extends State<UpdatePersonalInfoPage> {
       }
     } catch (e) {
       print("Lỗi upload: $e");
-      throw e; 
+      rethrow; 
     }
     return downloadUrls;
   }

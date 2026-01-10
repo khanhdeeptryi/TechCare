@@ -17,8 +17,9 @@ class MedicalRecordDetailScreen extends StatelessWidget {
     String type = appointment.bookingType.toLowerCase();
 
     // Ưu tiên lấy data theo type chuẩn
-    if (type == 'doctor') data = appointment.doctorData;
-    else if (type == 'clinic') data = appointment.clinicData;
+    if (type == 'doctor') {
+      data = appointment.doctorData;
+    } else if (type == 'clinic') data = appointment.clinicData;
     else if (type == 'hospital') data = appointment.hospitalData;
 
     // Fallback: Nếu không tìm thấy, thử dò trong các trường khác (cho data cũ)
@@ -162,7 +163,7 @@ class MedicalRecordDetailScreen extends StatelessWidget {
                   subtitle: Text("${item.dosage} | ${item.frequency}\n${item.duration}"),
                   isThreeLine: true,
                 ),
-              )).toList(),
+              )),
 
             const SizedBox(height: 30),
           ],

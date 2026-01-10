@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:get/get.dart';
 import 'package:tech_care/models/appointment_model.dart';
 // Nhớ import trang chi tiết nếu có
 
@@ -100,8 +99,9 @@ class AppointmentListTab extends StatelessWidget {
     String type = (appointment.bookingType).toLowerCase().trim();
 
     // Bước A: Thử lấy theo đúng loại bookingType
-    if (type == 'doctor') data = appointment.doctorData;
-    else if (type == 'clinic') data = appointment.clinicData;
+    if (type == 'doctor') {
+      data = appointment.doctorData;
+    } else if (type == 'clinic') data = appointment.clinicData;
     else if (type == 'hospital') data = appointment.hospitalData;
 
     // Bước B: Nếu không có (do data cũ bị null hoặc sai type), tự động dò các trường còn lại

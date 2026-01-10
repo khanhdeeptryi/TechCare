@@ -13,10 +13,10 @@ class SuccessScreen extends StatelessWidget {
   final String? targetUserName; // Tên hiển thị (VD: BS. Nguyễn Văn A)
 
   const SuccessScreen({
-    Key? key,
+    super.key,
     this.targetUserId,
     this.targetUserName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

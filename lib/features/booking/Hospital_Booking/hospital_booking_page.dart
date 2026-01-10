@@ -6,7 +6,7 @@ import '../../../widgets/hospital_card.dart';
 import 'hospital_booking_screen.dart'; // File bước 4
 
 class HospitalBookingPage extends StatelessWidget {
-  const HospitalBookingPage({Key? key}) : super(key: key);
+  const HospitalBookingPage({super.key});
 
   @override
   Widget build(BuildContext context) {

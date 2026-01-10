@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:tech_care/wrapper.dart';
 
 class Forgot extends StatefulWidget {
   const Forgot({super.key});

@@ -471,7 +471,7 @@ class MedicalRecordDetailScreen extends StatelessWidget {
                   title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text("${item.dosage} | ${item.frequency}\n${item.duration}"),
                 ),
-              )).toList(),
+              )),
               
             const SizedBox(height: 30),
           ],

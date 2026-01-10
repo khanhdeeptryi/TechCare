@@ -16,13 +16,13 @@ class HospitalConfirmationScreen extends StatefulWidget {
   final String serviceType;      // "normal" | "vip"
 
   const HospitalConfirmationScreen({
-    Key? key,
+    super.key,
     required this.hospital,
     required this.patientProfile,
     required this.selectedDate,
     required this.selectedTimeSlot,
     required this.serviceType,
-  }) : super(key: key);
+  });
 
   @override
   State<HospitalConfirmationScreen> createState() =>

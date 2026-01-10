@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tech_care/features/account/update_personal_info_page.dart';
 // Import các trang liên kết
-import 'package:tech_care/features/health_profile/health_profile_page.dart';
 import 'package:tech_care/features/authenticate/login.dart';
 
 class Account extends StatelessWidget {

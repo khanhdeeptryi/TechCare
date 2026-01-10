@@ -13,6 +13,7 @@ import 'package:tech_care/features/chat/doctor_history_for_chat_page.dart';
 import 'package:tech_care/features/call/doctor_list_for_call_page.dart';
 import 'features/services/lab_test_page.dart';
 import 'features/services/vaccination_page.dart';
+import 'features/medical_assistant/medical_assistant_page.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -37,7 +38,7 @@ class _HomepageState extends State<Homepage> {
       case 1:
         return const PatientAppointmentListPage();
       case 2:
-        return Center(child: Text('Trợ lý y khoa', style: TextStyle(fontSize: 24)));
+        return const MedicalAssistantPage();
       case 3:
         return ConversationListPage();
       case 4:

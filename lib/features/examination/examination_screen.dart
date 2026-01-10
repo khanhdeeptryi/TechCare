@@ -26,7 +26,7 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
 
   // --- [MỚI] Biến quản lý ảnh đính kèm ---
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _selectedImages = []; 
+  final List<XFile> _selectedImages = []; 
 
   bool _isSubmitting = false;
 
@@ -70,7 +70,7 @@ class _ExaminationScreenState extends State<ExaminationScreen> {
       }
     } catch (e) {
       print("Lỗi upload: $e");
-      throw e;
+      rethrow;
     }
     return downloadUrls;
   }

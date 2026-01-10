@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +12,9 @@ class ClinicBookingScreen extends StatefulWidget {
   final Clinic clinic;
 
   const ClinicBookingScreen({
-    Key? key,
+    super.key,
     required this.clinic,
-  }) : super(key: key);
+  });
 
   @override
   State<ClinicBookingScreen> createState() => _ClinicBookingScreenState();
@@ -23,7 +22,7 @@ class ClinicBookingScreen extends StatefulWidget {
 
 class _ClinicBookingScreenState extends State<ClinicBookingScreen> {
   // Calendar
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
@@ -68,7 +67,7 @@ class _ClinicBookingScreenState extends State<ClinicBookingScreen> {
     "19:20-19:30",
   ];
 
-  bool _isSaving = false;
+  final bool _isSaving = false;
 
   @override
   void initState() {
@@ -556,7 +555,7 @@ Future<void> _onEditProfile() async {
 class _PatientProfileFormScreen extends StatefulWidget {
   final PatientProfileRepository repo;
   final PatientProfile? profile;
-  const _PatientProfileFormScreen({Key? key, required this.repo, this.profile}) : super(key: key);
+  const _PatientProfileFormScreen({required this.repo, this.profile});
 
   @override
   State<_PatientProfileFormScreen> createState() => _PatientProfileFormScreenState();
@@ -630,7 +629,7 @@ class _PatientProfileFormScreenState extends State<_PatientProfileFormScreen> {
 
 class _PatientProfileSelectionScreen extends StatelessWidget {
   final PatientProfileRepository repo;
-  const _PatientProfileSelectionScreen({Key? key, required this.repo}) : super(key: key);
+  const _PatientProfileSelectionScreen({required this.repo});
 
   @override
   Widget build(BuildContext context) {

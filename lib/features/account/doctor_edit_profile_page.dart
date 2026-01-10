@@ -73,7 +73,7 @@ class _DoctorEditProfilePageState extends State<DoctorEditProfilePage> {
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
       print("Lỗi upload: $e");
-      throw e;
+      rethrow;
     }
   }
 

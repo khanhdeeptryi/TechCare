@@ -51,7 +51,7 @@ class _ClinicEditProfilePageState extends State<ClinicEditProfilePage> {
       await ref.putFile(file);
       return await ref.getDownloadURL();
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 

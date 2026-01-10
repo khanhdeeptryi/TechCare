@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../homepage.dart'; 
 
 class SuccessScreen extends StatelessWidget {
-  const SuccessScreen({Key? key}) : super(key: key);
+  const SuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,7 @@ class HospitalCard extends StatelessWidget {
   final Hospital hospital;
   final VoidCallback onTap;
 
-  const HospitalCard({Key? key, required this.hospital, required this.onTap}) : super(key: key);
+  const HospitalCard({super.key, required this.hospital, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

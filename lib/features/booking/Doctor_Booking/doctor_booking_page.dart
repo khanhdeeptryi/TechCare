@@ -8,7 +8,7 @@ import '../../../widgets/doctor_card.dart';
 import 'booking_screen.dart';
 
 class DoctorBookingPage extends StatefulWidget {
-  const DoctorBookingPage({Key? key}) : super(key: key);
+  const DoctorBookingPage({super.key});
 
   @override
   State<DoctorBookingPage> createState() => _DoctorBookingPageState();
@@ -256,7 +256,7 @@ class _DoctorBookingPageState extends State<DoctorBookingPage> {
                     Navigator.pop(context);
                   },
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 12),
             ],
           ),
@@ -309,7 +309,7 @@ class _DoctorBookingPageState extends State<DoctorBookingPage> {
                     Navigator.pop(context);
                   },
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 12),
             ],
           ),

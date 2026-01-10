@@ -50,7 +50,7 @@ class _HospitalEditProfilePageState extends State<HospitalEditProfilePage> {
       await ref.putFile(file);
       return await ref.getDownloadURL();
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 

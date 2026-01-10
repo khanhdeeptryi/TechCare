@@ -6,10 +6,10 @@ class DoctorCard extends StatelessWidget {
   final VoidCallback onBookPressed;
 
   const DoctorCard({
-    Key? key,
+    super.key,
     required this.doctor,
     required this.onBookPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

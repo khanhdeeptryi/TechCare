@@ -16,12 +16,12 @@ class ConfirmationScreen extends StatefulWidget {
   final String selectedTimeSlot; // Ví dụ: "17:30-17:40"
 
   const ConfirmationScreen({
-    Key? key,
+    super.key,
     required this.doctor,
     required this.patientProfile,
     required this.selectedDate,
     required this.selectedTimeSlot,
-  }) : super(key: key);
+  });
 
   @override
   State<ConfirmationScreen> createState() => _ConfirmationScreenState();

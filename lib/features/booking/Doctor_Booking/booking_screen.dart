@@ -15,9 +15,9 @@ class BookingScreen extends StatefulWidget {
   final Doctor doctor;
 
   const BookingScreen({
-    Key? key,
+    super.key,
     required this.doctor,
-  }) : super(key: key);
+  });
 
   @override
   _BookingScreenState createState() => _BookingScreenState();
@@ -29,7 +29,7 @@ class _BookingScreenState extends State<BookingScreen> {
   PatientProfile? _selectedProfile;
   bool _isLoadingProfile = true;
 
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   String? _selectedTimeSlot;
@@ -502,7 +502,7 @@ class _BookingScreenState extends State<BookingScreen> {
 class _PatientProfileFormScreen extends StatefulWidget {
   final PatientProfileRepository repo;
   final PatientProfile? profile;
-  const _PatientProfileFormScreen({Key? key, required this.repo, this.profile}) : super(key: key);
+  const _PatientProfileFormScreen({required this.repo, this.profile});
 
   @override
   State<_PatientProfileFormScreen> createState() => _PatientProfileFormScreenState();
@@ -576,7 +576,7 @@ class _PatientProfileFormScreenState extends State<_PatientProfileFormScreen> {
 
 class _PatientProfileSelectionScreen extends StatelessWidget {
   final PatientProfileRepository repo;
-  const _PatientProfileSelectionScreen({Key? key, required this.repo}) : super(key: key);
+  const _PatientProfileSelectionScreen({required this.repo});
 
   @override
   Widget build(BuildContext context) {
